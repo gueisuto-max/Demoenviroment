@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#080E1F">
+<title>WalkMe × SAP</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{height:100%;width:100%;background-color:#080E1F;-webkit-text-size-adjust:100%;}
+body{height:100%;width:100%;overflow:hidden;background-color:#080E1F;color:#F1F5F9;font-family:-apple-system,BlinkMacSystemFont,'Hiragino Kaku Gothic ProN','Hiragino Sans',Meiryo,sans-serif;-webkit-tap-highlight-color:transparent;touch-action:pan-y;font-size:14px;line-height:1.6;}
+
+.deck{height:100%;width:100%;position:relative;}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:max(env(safe-area-inset-top,20px),24px) 24px max(env(safe-area-inset-bottom,16px),20px);opacity:0;transform:translateX(50px);transition:opacity .35s,transform .35s;pointer-events:none;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.slide.active{opacity:1;transform:none;pointer-events:auto;}
+.slide.prev{opacity:0;transform:translateX(-50px);pointer-events:none;}
+
+.dots{position:fixed;bottom:max(12px,env(safe-area-inset-bottom,12px));left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:200;}
+.dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.2);transition:all .3s;cursor:pointer;}
+.dot.active{width:20px;border-radius:4px;background:#3CDB5D;}
+.progress{position:fixed;top:0;left:0;height:3px;background:#3CDB5D;z-index:200;transition:width .35s;}
+.timer{position:fixed;top:max(6px,env(safe-area-inset-top,6px));right:10px;font-size:10px;color:rgba(241,245,249,.3);z-index:200;font-variant-numeric:tabular-nums;}
+.navH{position:fixed;bottom:max(30px,calc(env(safe-area-inset-bottom,12px)+16px));right:16px;z-index:200;font-size:10px;color:rgba(241,245,249,.25);animation:ph 2s ease infinite;}
+@keyframes ph{0%,100%{opacity:.25}50%{opacity:.6}}
+
+.ey{font-size:10px;font-weight:700;letter-spacing:3px;color:#3CDB5D;margin-bottom:10px;}
+.hl{font-size:clamp(20px,5vw,28px);font-weight:700;line-height:1.35;margin-bottom:14px;color:#FFFFFF;}
+.sb{font-size:clamp(12px,3.2vw,15px);font-weight:400;line-height:1.8;color:rgba(255,255,255,.65);margin-bottom:16px;}
+.sb strong{color:#FFFFFF;}
+
+/* ── Slide 1 cards ── */
+.s1card{background:#0F172A;border-radius:10px;padding:14px 16px;margin-bottom:10px;border-left:4px solid #3CDB5D;}
+.s1card .s1t{font-size:14px;font-weight:700;color:#FFFFFF;margin-bottom:4px;}
+.s1card .s1b{font-size:12px;line-height:1.7;color:rgba(255,255,255,.6);}
+
+/* ── Persona cards ── */
+.pr{display:flex;flex-direction:column;gap:10px;margin-bottom:12px;}
+.pc{background:#0F172A;border-radius:10px;padding:14px 16px;border-left:4px solid;position:relative;}
+.pc .pn{font-size:16px;font-weight:700;color:#FFFFFF;margin-bottom:2px;}
+.pc .pl{font-size:11px;color:rgba(255,255,255,.7);margin-bottom:10px;}
+.pc .pp{font-size:11px;line-height:1.6;color:#FCA5A5;margin-bottom:8px;padding:6px 8px;background:rgba(239,68,68,.08);border-radius:6px;}
+.pc .pw{font-size:11px;line-height:1.6;color:#86EFAC;padding:6px 8px;background:rgba(60,219,93,.08);border-radius:6px;}
+.pc .ph{position:absolute;top:10px;right:12px;font-size:8px;font-weight:700;padding:2px 7px;border-radius:3px;letter-spacing:.5px;}
+
+/* ── Demo ── */
+.dtabs{display:flex;gap:6px;margin-bottom:6px;}
+.dtab{flex:1;padding:7px 0;border-radius:8px;text-align:center;font-size:11px;font-weight:600;cursor:pointer;background:#0F172A;color:rgba(255,255,255,.4);border:1px solid rgba(255,255,255,.06);transition:all .2s;}
+.dtab.active{color:#FFF;border-color:#3CDB5D;background:#1A2540;}
+.ds{display:flex;gap:2px;margin-bottom:5px;}
+.ds div{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.08);transition:background .3s;}
+.ds div.done{background:#3CDB5D;}
+.ds div.cur{background:#4A9FE0;}
+
+.mb{background:#0F172A;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.08);margin-bottom:6px;position:relative;}
+.mbar{background:#1E293B;padding:4px 8px;display:flex;align-items:center;gap:4px;border-bottom:1px solid rgba(255,255,255,.05);}
+.mbar-d{width:5px;height:5px;border-radius:50%;}
+.mbar-u{font-size:8px;color:rgba(255,255,255,.3);flex:1;margin-left:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.mscr{min-height:180px;position:relative;font-size:10px;}
+
+.sf-m{background:#F3F2F2;}
+.sf-hd{height:28px;background:#032D60;display:flex;align-items:center;padding:0 8px;}
+.sf-logo{font-size:9px;font-weight:800;color:#fff;}
+.sf-bd{padding:6px 8px;}
+.sf-title{font-size:12px;font-weight:700;color:#181818;margin-bottom:4px;}
+.sf-bg{display:inline-block;padding:1px 6px;border-radius:3px;font-size:9px;font-weight:600;margin-right:4px;}
+
+.sap-m{background:#F5F6F7;}
+.sap-hd{height:28px;background:#003B73;display:flex;align-items:center;padding:0 8px;gap:5px;}
+.sap-lg{width:16px;height:12px;background:#3CCF9E;border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:900;color:#003B73;}
+.sap-ht{font-size:9px;color:rgba(255,255,255,.85);}
+.sap-bd{padding:6px 8px;}
+.sap-f{margin-bottom:4px;}
+.sap-l{font-size:8px;color:#6A6D70;font-weight:600;margin-bottom:1px;}
+.sap-i{border:1px solid #C4C4C4;border-radius:3px;padding:3px 6px;font-size:10px;color:#1C2D3E;background:#fff;min-height:18px;transition:all .3s;}
+.sap-i.typing{background:#FFFBEB;border-left:3px solid #F59E0B;}
+.sap-i.filled{background:#F0FFF4;border-left:3px solid #3CDB5D;}
+.sap-i.warn{background:#FFF6F0;border-left:3px solid #E86C00;color:#8B3A00;font-weight:600;}
+.sap-ok{background:#DCFCE7;border:1px solid #86EFAC;border-radius:4px;padding:5px 8px;font-size:10px;color:#15803D;font-weight:600;text-align:center;margin-top:4px;display:none;}
+
+.ab-sep{height:2px;background:linear-gradient(90deg,transparent 5%,#3CDB5D 50%,transparent 95%);}
+.mab{background:#FFFFFF;padding:5px 8px;display:flex;align-items:center;gap:5px;border-radius:0 0 12px 12px;}
+.mab-me{width:20px;height:20px;border-radius:50%;background:#0A66C2;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:900;color:#fff;}
+.mab-p{padding:4px 10px;border-radius:100px;font-size:9px;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:calc(100% - 60px);}
+.mab-p.g{background:#16A34A;color:#fff;}
+.mab-p.b{background:#1D4ED8;color:#fff;}
+.mab-p.p{background:#7C3AED;color:#fff;}
+.mab-p.r{background:#DC2626;color:#fff;}
+.mab-p.gh{background:#F1F5F9;color:#64748B;border:1px solid #E2E8F0;}
+.mab-p.o{background:#F59E0B;color:#fff;}
+
+.jc{position:absolute;top:34px;left:50%;transform:translateX(-50%);width:calc(100% - 14px);max-width:320px;background:#fff;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.15);padding:8px 10px;display:none;z-index:10;animation:jp .2s ease;}
+.jc.show{display:block;}
+@keyframes jp{from{opacity:0;transform:translateX(-50%) translateY(6px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+.jc-h{font-size:10px;font-weight:700;color:#0F172A;margin-bottom:4px;display:flex;align-items:center;gap:4px;}
+.jc-me{width:14px;height:14px;border-radius:50%;background:#0A66C2;display:flex;align-items:center;justify-content:center;font-size:6px;font-weight:900;color:#fff;}
+.jc-b{font-size:9px;color:#475569;line-height:1.5;background:#F8FAFC;border-radius:5px;padding:6px;margin-bottom:4px;}
+.jc-b strong{color:#0F172A;}
+.jc-t{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:4px;}
+.jc-tg{font-size:8px;padding:1px 6px;border-radius:100px;}
+.jc-tg.ok{background:#DCFCE7;color:#15803D;border:1px solid #86EFAC;}
+.jc-tg.bad{background:#FEF2F2;color:#991B1B;border:1px solid #FCA5A5;}
+
+/* Suzuki UKM cards */
+.ukm-c{background:#fff;border:1px solid #C4C4C4;border-radius:3px;padding:5px 8px;margin-bottom:4px;border-left:3px solid;}
+.ukm-c .ukm-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;}
+.ukm-c .ukm-title{font-size:10px;font-weight:700;color:#1C1C1C;}
+.ukm-c .ukm-st{font-size:8px;font-weight:600;padding:1px 5px;border-radius:2px;}
+.ukm-c .ukm-info{font-size:9px;color:#6A6D70;line-height:1.4;}
+
+.dc{display:flex;gap:6px;justify-content:center;margin-top:4px;}
+.dc button{padding:7px 14px;border-radius:8px;font-size:11px;font-weight:600;border:none;cursor:pointer;font-family:inherit;transition:all .15s;}
+.dc .pri{background:#3CDB5D;color:#080E1F;}
+.dc .sec{background:#1A2540;color:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.1);}
+.dh{font-size:9px;color:rgba(255,255,255,.4);text-align:center;margin-top:3px;}
+.dh strong{color:#3CDB5D;}
+
+.dlog{margin-top:4px;max-height:60px;overflow-y:auto;font-size:8px;color:rgba(255,255,255,.3);background:rgba(15,23,42,.5);border-radius:6px;padding:4px 6px;}
+.dlog div{margin-bottom:1px;}
+.dlog .lw{color:rgba(60,219,93,.5);}
+.dlog .lo{color:rgba(249,115,22,.5);}
+.dlog .lk{color:rgba(74,159,224,.5);}
+
+/* Loading overlay */
+.mload{
+  position:absolute;inset:0;z-index:20;
+  background:rgba(15,23,42,.88);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:8px;display:none;
+}
+.mload.show{display:flex;}
+.mload-spin{
+  width:24px;height:24px;border:3px solid rgba(255,255,255,.15);
+  border-top-color:#3CDB5D;border-radius:50%;
+  animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.mload-txt{font-size:10px;color:rgba(255,255,255,.7);font-weight:500;text-align:center;}
+</style>
+</head>
+<body>
+<div class="progress" id="prog"></div>
+<div class="dots" id="dots"></div>
+<div class="navH" id="navH">タップで進む →</div>
+<div class="timer" id="timer"></div>
+
+<div class="deck" id="deck">
+
+<!-- ═══ 0: WHY ═══ -->
+<div class="slide active" data-s="0">
+  <div class="ey">背景と目的</div>
+  <div class="hl">Joule Action Barの<br>日本語営業デモが<br>まだ存在しない</div>
+  <div class="s1card">
+    <div class="s1t">① 営業資料として使えるデモを作りたい</div>
+    <div class="s1b">Joule Action Bar（2026年5月GA予定）の日本語デモ環境がまだ市場にありません。SAP顧客に「これが実際にどう動くか」を見せられる実践的なデモシナリオを構築したいです。</div>
+  </div>
+  <div class="s1card" style="border-color:#4A9FE0;">
+    <div class="s1t">② 技術者と「何ができるか」を確認したい</div>
+    <div class="s1b">WalkMeとSAPの技術者で実際の環境を触りながら、現時点で技術的にどこまで実現できるかを検証したいです。デモシナリオはその確認の土台になります。</div>
+  </div>
+</div>
+
+<!-- ═══ 1: PERSONA ═══ -->
+<div class="slide" data-s="1">
+  <div class="ey">デモで見せるペルソナ</div>
+  <div class="hl" style="font-size:clamp(17px,4.2vw,22px);margin-bottom:10px;">お客様の「あるある」を3人で再現</div>
+  <div class="pr">
+    <div class="pc" style="border-color:#4A9FE0;">
+      <div class="ph" style="background:rgba(74,159,224,.15);color:#4A9FE0;">Phase 3</div>
+      <div class="pn">田中さん</div>
+      <div class="pl">営業担当 — Salesforce + SAP を毎日使って受注処理</div>
+      <div class="pp">😤 商談をクローズしてからSAPで受注登録するまでに、転記・与信確認・承認申請で何度もシステムを行き来。途中で与信超過が判明して手戻りすることも</div>
+      <div class="pw">✓ 商談の段階で与信リスクが分かり、承認申請も自動で準備される。Closed WonしたらSAPの受注画面が開いてOpportunity IDが自動で入っている</div>
+    </div>
+    <div class="pc" style="border-color:#8B5CF6;">
+      <div class="ph" style="background:rgba(139,92,246,.15);color:#8B5CF6;">Phase 1 ★</div>
+      <div class="pn">鈴木さん</div>
+      <div class="pl">与信管理担当 — SAP S/4HANAで承認業務</div>
+      <div class="pp">😤 営業から電話やメールで「この案件の与信通りますか？」が月20件以上。承認根拠を自分で調べてメールで返信する繰り返し</div>
+      <div class="pw">✓ 画面を開くだけで承認待ち案件がバッジで分かり、判断材料もAIが要約してくれる。ワンクリックで承認完了し、営業に自動通知される</div>
+    </div>
+    <div class="pc" style="border-color:#3CDB5D;">
+      <div class="ph" style="background:rgba(60,219,93,.15);color:#3CDB5D;">Phase 2</div>
+      <div class="pn">中村さん</div>
+      <div class="pl">新入社員 — 入社3ヶ月、受注登録を学習中</div>
+      <div class="pp">😤 80ページのマニュアルと先輩頼み。「支払条件って何？」が聞けず差し戻しが頻発</div>
+      <div class="pw">✓ 画面を開くだけでガイドが始まり、分からない用語はAIに聞ける。必須項目のチェックも自動で、先輩に聞かなくても一人で完走できる</div>
+      <div style="margin-top:6px;font-size:9px;color:rgba(255,255,255,.35);background:rgba(255,255,255,.05);padding:4px 8px;border-radius:4px;">※ 本シナリオは今回モックアップ未作成。田中・鈴木シナリオを先行構築</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 2: DEMO ═══ -->
+<div class="slide" data-s="2">
+  <div class="ey">デモ</div>
+  <div class="dtabs">
+    <div class="dtab active" id="tabT" onclick="sw('t')">田中さん（営業）</div>
+    <div class="dtab" id="tabS" onclick="sw('s')">鈴木さん（与信管理）</div>
+  </div>
+  <div class="ds" id="dS"></div>
+  <div class="mb">
+    <div class="mbar">
+      <div class="mbar-d" style="background:#FF5F57"></div>
+      <div class="mbar-d" style="background:#FEBC2E"></div>
+      <div class="mbar-d" style="background:#28C840"></div>
+      <div class="mbar-u" id="mU">salesforce.com — 商談詳細</div>
+    </div>
+
+    <!-- Loading overlay -->
+    <div class="mload" id="mLoad">
+      <div class="mload-spin"></div>
+      <div class="mload-txt" id="mLoadTxt">画面を読み込み中...</div>
+    </div>
+
+    <!-- ══ Tanaka screens ══ -->
+    <div id="scT">
+      <div class="mscr sf-m" id="tSF">
+        <div class="sf-hd"><span class="sf-logo">☁ Sales Cloud</span></div>
+        <div class="sf-bd">
+          <div class="sf-title">鈴木製作所向け部品ABC受注</div>
+          <div><span class="sf-bg" id="tPh" style="background:#D1ECF1;color:#0C5460;">Negotiation</span><span class="sf-bg" style="background:#E8DAEF;color:#6C3483;">¥4,200,000</span></div>
+          <div style="font-size:9px;color:#706E6B;margin-top:4px;line-height:1.4;">取引先: 株式会社鈴木製作所（C-00381）<br>品目: 部品ABC / DEF / GHI（3点）<br>Opportunity ID: OPP-2026-0412</div>
+        </div>
+        <div class="jc" id="tJC">
+          <div class="jc-h"><div class="jc-me">me</div>Joule — 事前照会（参考値）</div>
+          <div class="jc-t"><span class="jc-tg ok">✓ ATP確認済み</span><span class="jc-tg ok">✓ 在庫確認済み</span><span class="jc-tg bad">! 与信超過 ¥1M</span></div>
+          <div class="jc-b"><strong>与信（UKM）:</strong> 残高¥3.2M → 見積¥4.2M<br>= <span style="color:#DC2626;font-weight:700;">超過 ¥1,000,000</span><br><strong>約束可能日（ATP）:</strong> ABC 6/15 ✓ / DEF 6/20 ✓ / GHI 6/25 ✓<br><strong>推奨:</strong> 与信枠拡大を申請してください<br><span style="font-size:8px;color:#94A3B8;">※参考値。確定は受注登録時にSAP標準で実行<br>参照: BTP集約API · 2026/04/01 09:10</span></div>
+        </div>
+      </div>
+      <div class="mscr sap-m" id="tBPA" style="display:none;">
+        <div class="sap-hd"><div class="sap-lg">S</div><span class="sap-ht">SAP BPA — 与信枠超過承認申請</span></div>
+        <div class="sap-bd">
+          <div class="sap-f"><div class="sap-l">申請者</div><div class="sap-i" id="tb1"></div></div>
+          <div class="sap-f"><div class="sap-l">取引先</div><div class="sap-i" id="tb2"></div></div>
+          <div class="sap-f"><div class="sap-l">受注金額</div><div class="sap-i" id="tb3"></div></div>
+          <div class="sap-f"><div class="sap-l" style="color:#E86C00;">与信超過額 ⚠</div><div class="sap-i" id="tb4"></div></div>
+          <div class="sap-f"><div class="sap-l">申請理由（Joule自動生成）</div><div class="sap-i" id="tb5" style="min-height:32px;"></div></div>
+          <div id="tbB" style="display:none;text-align:right;margin-top:4px;"><button onclick="tN()" style="background:#0064D9;color:#fff;border:none;padding:4px 12px;border-radius:3px;font-size:9px;font-weight:600;cursor:pointer;">送信して申請する →</button></div>
+        </div>
+      </div>
+      <div class="mscr sap-m" id="tSAP" style="display:none;">
+        <div class="sap-hd"><div class="sap-lg">S</div><span class="sap-ht">S/4HANA Cloud — 受注登録</span></div>
+        <div class="sap-bd">
+          <div style="background:#EBF5FB;border:1px solid #C0D8F5;border-radius:3px;padding:3px 6px;margin-bottom:4px;font-size:8px;font-weight:700;color:#0064D9;">🔗 Autofill: Salesforce Opportunity ID → 参照番号</div>
+          <div class="sap-f"><div class="sap-l">参照番号（VBKD-IHREZ）</div><div class="sap-i" id="ts1"></div></div>
+          <div class="sap-f"><div class="sap-l">得意先コード</div><div class="sap-i" id="ts2"></div></div>
+          <div class="sap-f"><div class="sap-l">支払条件</div><div class="sap-i" id="ts3"></div></div>
+          <div style="font-size:8px;font-weight:600;color:#0064D9;margin:4px 0 2px;">📋 明細（Joule + Smart Walk-Thru ハイブリッド）</div>
+          <div class="sap-f"><div class="sap-l">明細1（Jouleガイド）</div><div class="sap-i" id="ts4"></div></div>
+          <div class="sap-f"><div class="sap-l">明細2（Jouleガイド）</div><div class="sap-i" id="ts5"></div></div>
+          <div class="sap-f"><div class="sap-l">明細3（SWTガイド）</div><div class="sap-i" id="ts6"></div></div>
+          <div class="sap-ok" id="tOk"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ Suzuki screens ══ -->
+    <div id="scS" style="display:none;">
+      <div class="mscr sap-m" id="sSAP">
+        <div class="sap-hd"><div class="sap-lg">S</div><span class="sap-ht">S/4HANA — 与信管理 例外承認</span></div>
+        <div class="sap-bd">
+          <div style="font-size:8px;font-weight:600;color:#6A6D70;margin-bottom:3px;">承認依頼 — マイ受信ボックス</div>
+          <div class="ukm-c" id="sC1" style="border-color:#E86C00;">
+            <div class="ukm-top"><span class="ukm-title">与信枠超過承認依頼</span><span class="ukm-st" id="sSt" style="background:#FDEBD0;color:#E86C00;">要承認</span></div>
+            <div class="ukm-info">鈴木製作所 / ¥4,200,000 / 超過¥1M<br>申請者: 田中 太郎（営業部）</div>
+          </div>
+          <div class="ukm-c" style="border-color:#C4C4C4;opacity:.4;">
+            <div class="ukm-top"><span class="ukm-title" style="color:#6A6D70;">東京商事 / ¥800,000</span><span class="ukm-st" style="background:#E5E7EB;color:#6B7280;">確認中</span></div>
+          </div>
+        </div>
+        <div class="jc" id="sJC">
+          <div class="jc-h"><div class="jc-me">me</div>Joule — 承認判断材料</div>
+          <div class="jc-t"><span class="jc-tg ok">✓ 回収実績 100%</span><span class="jc-tg ok">✓ 取引5年</span><span class="jc-tg bad">! 超過 ¥1M</span><span class="jc-tg ok">✓ 推奨: 承認</span></div>
+          <div class="jc-b"><strong>与信限度額:</strong> ¥3,200,000<br><strong>回収実績:</strong> 過去12ヶ月 100%（延滞なし）<br><strong>取引年数:</strong> 5年 / 累計受注 ¥38M<br><strong>推奨:</strong> <span style="color:#16A34A;font-weight:700;">承認</span> — 低リスク<br><span style="font-size:8px;color:#94A3B8;">参照: UKM+FI-AR · 2026/04/01 09:22</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ab-sep"></div>
+    <div class="mab"><div class="mab-me">me</div><div id="mP" class="mab-p g" onclick="cN()">✨ 与信・在庫を事前確認</div></div>
+  </div>
+
+  <div class="dc">
+    <button class="pri" onclick="cN()" id="dB">▶ 次のステップ</button>
+    <button class="sec" onclick="cR()">↺</button>
+  </div>
+  <div class="dh" id="dH">ボタンを押してデモを体験</div>
+  <div class="dlog" id="dL"></div>
+</div>
+
+</div>
+
+<script>
+const tot=3;let cur=0;
+const sls=document.querySelectorAll('.slide');
+const dotsE=document.getElementById('dots');
+for(let i=0;i<tot;i++){const d=document.createElement('div');d.className='dot'+(i===0?' active':'');d.onclick=()=>go(i);dotsE.appendChild(d);}
+function go(n){if(n<0||n>=tot)return;sls.forEach((s,i)=>{s.classList.remove('active','prev');if(i===n)s.classList.add('active');else if(i<n)s.classList.add('prev');});document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',i===n));document.getElementById('prog').style.width=((n+1)/tot*100)+'%';document.getElementById('navH').textContent=n<tot-1?'タップで進む →':'';cur=n;}
+let tx=0,ty=0;const dk=document.getElementById('deck');
+dk.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY},{passive:true});
+dk.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;const tg=e.target.tagName.toLowerCase();if(tg==='button'||e.target.className.includes('mab-p')||e.target.className.includes('dot')||e.target.className.includes('dtab'))return;if(Math.abs(dx)<30&&Math.abs(dy)<30)go(cur+1);else if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>50)go(dx<0?cur+1:cur-1);},{passive:true});
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key===' ')go(cur+1);else if(e.key==='ArrowLeft')go(cur-1);});
+
+const tE=document.getElementById('timer');let t0=Date.now();
+setInterval(()=>{const s=Math.floor((Date.now()-t0)/1000);tE.textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0')+' / 5:00';if(s>=300)tE.style.color='#EF4444';else if(s>=240)tE.style.color='#F59E0B';},1000);
+
+// ── Engine ──
+const $=id=>document.getElementById(id);
+const sl=ms=>new Promise(r=>setTimeout(r,ms));
+function log(t,c){const l=$('dL');const d=document.createElement('div');d.className=c||'';const n=new Date();d.textContent=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')} ${t}`;l.appendChild(d);l.scrollTop=l.scrollHeight;}
+async function tf(id,txt,spd){const el=$(id);if(!el)return;el.textContent='';el.classList.remove('filled','warn');el.classList.add('typing');for(const c of txt){el.textContent+=c;await sl(spd||20);}el.classList.remove('typing');el.classList.add('filled');}
+function uS(n,tot){const c=$('dS');c.innerHTML='';for(let i=0;i<tot;i++){const d=document.createElement('div');if(i<n)d.className='done';else if(i===n)d.className='cur';c.appendChild(d);}}
+
+async function showLoad(txt,ms){const ld=$('mLoad'),lt=$('mLoadTxt');lt.textContent=txt||'読み込み中...';ld.classList.add('show');await sl(ms||2000);ld.classList.remove('show');}
+
+let mode='t',tP=0,sP=0;
+function cN(){if(mode==='t')tN();else sN();}
+function cR(){if(mode==='t')tR();else sR();}
+function sw(m){mode=m;$('tabT').classList.toggle('active',m==='t');$('tabS').classList.toggle('active',m==='s');$('scT').style.display=m==='t'?'':'none';$('scS').style.display=m==='s'?'':'none';if(m==='t')tR();else sR();}
+
+// ═══ TANAKA (7 steps) ═══
+async function tN(){
+  tP++;const p=$('mP'),h=$('dH'),b=$('dB');
+  b.disabled=true;b.style.opacity='.4';
+  if(tP===1){
+    uS(1,7);
+    await showLoad('Salesforce Negotiation段階を検知中...',2000);
+    $('tJC').classList.add('show');
+    p.textContent='⚠ 与信超過¥1M検出 — 承認申請へ';p.className='mab-p r';
+    $('mU').textContent='salesforce.com — Negotiation → Joule照会';
+    h.textContent='Jouleが与信超過¥1Mを検出。次で承認申請へ';
+    log('WalkMe: Negotiation検知 → Joule事前照会','lw');
+    log('Joule: 与信超過¥1,000,000を検出（参考値）','lo');
+    b.disabled=false;b.style.opacity='1';
+  }else if(tP===2){
+    uS(2,7);
+    $('tJC').classList.remove('show');
+    $('tSF').style.display='none';
+    await showLoad('WalkMe Redirect → BPA承認フォームへ遷移中...',2000);
+    $('tBPA').style.display='block';
+    $('mU').textContent='sap.com — BPA 与信枠超過承認申請';
+    p.textContent='⏳ Autofill 実行中...';p.className='mab-p o';
+    h.textContent='BPAフォームにAutofillで自動入力中...';
+    log('WalkMe Redirect → BPA承認フォーム','lw');
+    await sl(300);
+    await tf('tb1','田中 太郎（営業部）',25);log('Autofill: 申請者','lw');
+    await tf('tb2','株式会社鈴木製作所（C-00381）',16);log('Autofill: 取引先','lw');
+    await tf('tb3','¥4,200,000',22);log('Autofill: 受注金額','lw');
+    await tf('tb4','¥1,000,000（限度額¥3.2M超過）',16);
+    const f4=$('tb4');f4.classList.remove('filled');f4.classList.add('warn');
+    log('Autofill: 与信超過額 ⚠','lo');
+    await tf('tb5','回収実績100%・取引年数5年の優良取引先。回収リスク低く、与信枠の一時拡大を申請します。',10);
+    log('Autofill: Joule生成の申請理由','lw');
+    $('tbB').style.display='block';
+    p.textContent='✓ Autofill完了 — 送信してください';p.className='mab-p g';
+    h.textContent='「送信して申請する」を押してください';
+    log('Autofill完了: 全5項目自動入力','lk');
+    b.disabled=false;b.style.opacity='1';
+  }else if(tP===3){
+    uS(3,7);
+    $('tBPA').style.display='none';
+    await showLoad('BPA送信完了 → Salesforceへ自動復帰中...',2000);
+    $('tSF').style.display='block';
+    $('mU').textContent='salesforce.com — 申請完了・SF復帰';
+    p.textContent='✓ 申請完了 — 鈴木さんへ通知済み';p.className='mab-p g';
+    h.textContent='BPA送信完了。Salesforceに自動復帰しました';
+    log('BPA送信完了 → Salesforceへ自動復帰','lk');
+    log('鈴木さんへ承認依頼を通知','lw');
+    b.disabled=false;b.style.opacity='1';
+  }else if(tP===4){
+    uS(4,7);
+    const ph=$('tPh');ph.textContent='Closed Won ✓';ph.style.background='#D1FAE5';ph.style.color='#065F46';
+    log('Salesforce: ステージ → Closed Won','lk');
+    p.textContent='▶ Closed Won → SAP受注登録へ遷移';p.className='mab-p b';
+    h.textContent='Closed Won → SAP S/4HANAへ自動遷移中...';
+    $('tSF').style.display='none';
+    await showLoad('WalkMe Redirect → SAP S/4HANA 受注登録へ遷移中...',2000);
+    $('tSAP').style.display='block';
+    $('mU').textContent='s4hana.cloud.sap — 受注登録';
+    log('WalkMe Redirect → S/4HANA受注登録','lw');
+    p.textContent='✓ SAP受注登録画面を表示';p.className='mab-p g';
+    h.textContent='SAP受注登録画面に遷移完了。次でAutofill';
+    b.disabled=false;b.style.opacity='1';
+  }else if(tP===5){
+    uS(5,7);
+    p.textContent='✨ Autofill: Opportunity ID';p.className='mab-p g';
+    h.textContent='参照番号にOpportunity IDを自動入力';
+    await tf('ts1','OPP-2026-0412',18);
+    log('Autofill: Opportunity ID → VBKD-IHREZ','lw');
+    await sl(200);
+    await tf('ts2','C-00381（鈴木製作所）',16);
+    log('得意先コード入力','lw');
+    await tf('ts3','ZB01（月末締め翌月末払い）',14);
+    log('支払条件: 取引先マスタから自動参照','lw');
+    p.textContent='✓ ヘッダー入力完了 → 明細入力へ';p.className='mab-p g';
+    h.textContent='ヘッダー完了。次で3品目の明細入力';
+    b.disabled=false;b.style.opacity='1';
+  }else if(tP===6){
+    uS(6,7);
+    p.textContent='✨ 明細1: Jouleガイド中';p.className='mab-p b';
+    h.textContent='Joule + Smart Walk-Thru で3品目入力中...';
+    await tf('ts4','部品ABC × 100個 × ¥20,000',14);
+    log('Joule: 明細1 部品ABC ATP確認（6/15）','lw');
+    p.textContent='✨ 明細2: Jouleガイド中';
+    await tf('ts5','部品DEF × 50個 × ¥30,000',14);
+    log('Joule: 明細2 部品DEF ATP確認（6/20）','lw');
+    p.textContent='▶ 明細3: Smart Walk-Thruガイド';p.className='mab-p g';
+    await tf('ts6','部品GHI × 30個 × ¥40,000',14);
+    log('SWT: 明細3 部品GHI（WalkMe Dataから参照）','lw');
+    p.textContent='💾 全明細入力完了 → 保存へ';p.className='mab-p g';
+    h.textContent='3品目入力完了（¥4,200,000）。次で保存';
+    log('全3明細入力完了 合計¥4,200,000','lk');
+    b.disabled=false;b.style.opacity='1';
+  }else if(tP===7){
+    uS(7,7);
+    await showLoad('SAP標準ロジックで保存処理中...',2000);
+    const ok=$('tOk');ok.style.display='block';ok.textContent='✓ 受注番号 0000012345 発番 — 与信ブロック設定済み（承認待ち）';
+    p.textContent='✓ 受注登録完了 — 0000012345';p.className='mab-p g';
+    h.innerHTML='<strong>手作業ゼロで受注登録が完走しました</strong>';
+    b.textContent='✓ 完了';b.disabled=true;b.style.opacity='.5';
+    log('SAP: 受注番号 0000012345 発番','lk');
+    log('与信ブロック自動設定 — DCD経由で承認・解除','lw');
+  }
+}
+function tR(){
+  tP=0;uS(0,7);
+  $('tSF').style.display='block';$('tBPA').style.display='none';$('tSAP').style.display='none';
+  $('tJC').classList.remove('show');
+  const ph=$('tPh');ph.textContent='Negotiation';ph.style.background='#D1ECF1';ph.style.color='#0C5460';
+  ['tb1','tb2','tb3','tb4','tb5','ts1','ts2','ts3','ts4','ts5','ts6'].forEach(id=>{const e=$(id);if(e){e.textContent='';e.className='sap-i';}});
+  $('tbB').style.display='none';
+  const ok=$('tOk');ok.style.display='none';ok.textContent='';
+  $('mU').textContent='salesforce.com — 商談詳細';
+  const p=$('mP');p.textContent='✨ 与信・在庫を事前確認';p.className='mab-p g';
+  $('dH').textContent='ボタンを押してデモを体験';
+  const b=$('dB');b.textContent='▶ 次のステップ';b.disabled=false;b.style.opacity='1';
+  $('dL').innerHTML='';
+}
+
+// ═══ SUZUKI (3 steps) ═══
+async function sN(){
+  sP++;const p=$('mP'),h=$('dH'),b=$('dB');
+  b.disabled=true;b.style.opacity='.4';
+  if(sP===1){
+    uS(1,3);
+    await showLoad('SAP与信管理画面を読み込み中...',2000);
+    $('sJC').classList.add('show');
+    p.textContent='✨ Joule: 承認材料を確認';p.className='mab-p p';
+    $('mU').textContent='s4hana.cloud.sap — 与信管理 承認ワークフロー';
+    h.textContent='Jouleが承認材料を自動要約。次で承認実行';
+    log('WalkMe: CREDIT_CONTROLLERロール検知','lw');
+    log('Joule: UKM+FI-AR横断照会 → 承認材料自動要約','lw');
+    b.disabled=false;b.style.opacity='1';
+  }else if(sP===2){
+    uS(2,3);
+    await showLoad('承認処理を実行中...',2000);
+    $('sJC').classList.remove('show');
+    const c=$('sC1');c.style.borderColor='#16A34A';
+    const st=$('sSt');st.textContent='承認済み ✓';st.style.background='#DCFCE7';st.style.color='#15803D';
+    p.textContent='✓ 承認完了 — 田中さんへ通知済み';p.className='mab-p g';
+    h.innerHTML='<strong>電話・メールゼロで承認が完了しました</strong>';
+    b.textContent='✓ 完了';b.disabled=true;b.style.opacity='.5';
+    uS(3,3);
+    log('DCD: Release実行 → 承認完了','lk');
+    log('田中さんへ完了通知を送信','lw');
+  }
+}
+function sR(){
+  sP=0;uS(0,3);
+  $('sJC').classList.remove('show');
+  $('sC1').style.borderColor='#E86C00';
+  const st=$('sSt');st.textContent='要承認';st.style.background='#FDEBD0';st.style.color='#E86C00';
+  $('mU').textContent='s4hana.cloud.sap — 与信管理';
+  const p=$('mP');p.textContent='⚠ 承認待ち 2件';p.className='mab-p p';
+  $('dH').textContent='ボタンを押してデモを体験';
+  const b=$('dB');b.textContent='▶ 次のステップ';b.disabled=false;b.style.opacity='1';
+  $('dL').innerHTML='';
+}
+
+uS(0,7);
+</script>
+</body>
+</html>
