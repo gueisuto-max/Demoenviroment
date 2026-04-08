@@ -1,0 +1,2311 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WalkMe AI Action Bar × SAP — デモ環境構築（v5 4AI評価反映版）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ── WalkMe Brand Colors ──
+   Dark Blue  : #0D1B3E (bg dark)
+   Blue       : #1F56AE (primary blue)
+   Light Blue : #4A9FE0 (identity/highlight)
+   Indigo     : #3D2FA0 (identity/highlight)
+   Neon Green : #3CDB5D (identity/highlight)
+   White      : #FFFFFF
+   Light Gray : #F4F6FA
+*/
+:root {
+  --wm-dark:    #0D1B3E;
+  --wm-darker:  #091428;
+  --wm-navy:    #132050;
+  --wm-blue:    #1F56AE;
+  --wm-lblue:   #4A9FE0;
+  --wm-indigo:  #3D2FA0;
+  --wm-green:   #3CDB5D;
+  --wm-green2:  #2BC44F;
+  --wm-white:   #FFFFFF;
+  --wm-light:   #F4F6FA;
+  --wm-border:  rgba(255,255,255,0.1);
+  --wm-border2: rgba(255,255,255,0.06);
+  --text:       #E8EDF8;
+  --muted:      rgba(255,255,255,0.45);
+  --muted2:     rgba(255,255,255,0.65);
+  --sans: 'Inter', 'Noto Sans JP', sans-serif;
+  /* Salesforce colors */
+  --sf-blue:    #0070D2;
+  --sf-dark:    #032D60;
+  --sf-header:  #1B5E9B;
+  /* SAP Fiori colors */
+  --sap-blue:   #0064D9;
+  --sap-dark:   #002B5E;
+  --sap-header: #003B73;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--wm-darker);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--wm-darker); }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
+
+/* ── NAVIGATION ── */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  background: rgba(13,27,62,0.96);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--wm-border);
+  display: flex; align-items: center; height: 56px; padding: 0 32px; gap: 0;
+}
+.nav-logo {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 13px; font-weight: 700; color: var(--wm-white);
+  margin-right: 32px; white-space: nowrap; letter-spacing: -0.2px;
+}
+.nav-logo-mark {
+  width: 28px; height: 28px; border-radius: 6px;
+  background: linear-gradient(135deg, var(--wm-green), var(--wm-lblue));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800; color: var(--wm-dark); flex-shrink: 0;
+}
+.nav-items { display: flex; flex: 1; overflow-x: auto; gap: 0; }
+.nav-item {
+  padding: 0 16px; height: 56px; display: flex; align-items: center;
+  font-size: 12px; font-weight: 500; color: var(--muted);
+  cursor: pointer; white-space: nowrap;
+  border-bottom: 2px solid transparent; transition: all .15s;
+}
+.nav-item:hover { color: var(--wm-white); }
+.nav-item.active { color: var(--wm-green); border-bottom-color: var(--wm-green); }
+
+/* ── SECTIONS ── */
+section { padding: 80px 40px 64px; max-width: 1080px; margin: 0 auto; }
+
+/* ── HERO ── */
+.hero-wrap {
+  min-height: 100vh; padding: 100px 40px 80px;
+  max-width: 1080px; margin: 0 auto;
+  display: flex; flex-direction: column; justify-content: center;
+  position: relative;
+}
+.hero-bg {
+  position: fixed; inset: 0; pointer-events: none; z-index: -1;
+  background:
+    radial-gradient(ellipse 60% 50% at 70% 20%, rgba(60,219,93,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 60% at 10% 80%, rgba(74,159,224,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 40% at 50% 50%, rgba(61,47,160,0.08) 0%, transparent 70%);
+}
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(60,219,93,0.1); border: 1px solid rgba(60,219,93,0.25);
+  border-radius: 100px; padding: 5px 14px; width: fit-content; margin-bottom: 24px;
+}
+.eyebrow-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--wm-green); box-shadow: 0 0 8px var(--wm-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:.4;transform:scale(.7);} }
+.eyebrow-text { font-size: 11px; font-weight: 600; color: var(--wm-green); letter-spacing: 1.5px; text-transform: uppercase; }
+.hero h1 {
+  font-size: clamp(32px, 4.5vw, 58px); font-weight: 700;
+  line-height: 1.1; letter-spacing: -1.5px; margin-bottom: 20px; color: var(--wm-white);
+}
+.hero h1 span { color: var(--wm-green); }
+.hero-sub { font-size: 16px; color: var(--muted2); max-width: 620px; line-height: 1.8; margin-bottom: 40px; }
+.hero-ctas { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 56px; }
+.btn-primary {
+  padding: 12px 28px; background: var(--wm-green); color: var(--wm-dark);
+  border: none; border-radius: 6px; font-size: 13px; font-weight: 700;
+  cursor: pointer; transition: all .2s; letter-spacing: .3px;
+}
+.btn-primary:hover { background: var(--wm-green2); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(60,219,93,0.25); }
+.btn-secondary {
+  padding: 12px 28px; background: transparent; color: var(--muted2);
+  border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; font-size: 13px;
+  font-weight: 500; cursor: pointer; transition: all .2s;
+}
+.btn-secondary:hover { border-color: rgba(255,255,255,0.4); color: var(--wm-white); }
+.hero-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  display: flex; align-items: center; gap: 6px; padding: 5px 12px;
+  border-radius: 100px; font-size: 11px; font-weight: 500; border: 1px solid;
+}
+.chip-green { color: var(--wm-green); border-color: rgba(60,219,93,0.3); background: rgba(60,219,93,0.08); }
+.chip-blue { color: var(--wm-lblue); border-color: rgba(74,159,224,0.3); background: rgba(74,159,224,0.08); }
+.chip-indigo { color: #8B7FE8; border-color: rgba(139,127,232,0.3); background: rgba(61,47,160,0.15); }
+.chip-white { color: var(--muted2); border-color: var(--wm-border); background: var(--wm-border2); }
+
+/* ── SECTION HEADERS ── */
+.sec-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--wm-green); margin-bottom: 8px; }
+.sec-title { font-size: clamp(22px, 2.5vw, 32px); font-weight: 700; color: var(--wm-white); letter-spacing: -.5px; margin-bottom: 8px; line-height: 1.2; }
+.sec-body { font-size: 14px; color: var(--muted2); max-width: 620px; line-height: 1.8; margin-bottom: 40px; }
+
+/* ── SUMMARY ── */
+.summary-box {
+  background: rgba(31,86,174,0.12); border: 1px solid rgba(74,159,224,0.2);
+  border-radius: 12px; padding: 28px 32px; margin-bottom: 40px;
+}
+.summary-box p { font-size: 15px; color: var(--muted2); line-height: 1.9; }
+.summary-box p strong { color: var(--wm-white); font-weight: 600; }
+
+/* ── SCENARIO SECTION ── */
+.scenario-grid { display: flex; flex-direction: column; gap: 16px; margin-bottom: 48px; }
+.scenario-card {
+  background: rgba(255,255,255,0.03); border: 1px solid var(--wm-border);
+  border-radius: 10px; overflow: hidden;
+}
+.scenario-head {
+  display: flex; align-items: center; gap: 12px; padding: 16px 20px;
+  border-bottom: 1px solid var(--wm-border2); cursor: pointer; transition: background .15s;
+}
+.scenario-head:hover { background: rgba(255,255,255,0.03); }
+.sc-num {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--wm-indigo), var(--wm-blue));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: var(--wm-white); flex-shrink: 0;
+}
+.sc-title { font-size: 14px; font-weight: 600; color: var(--wm-white); flex: 1; }
+.sc-who { font-size: 11px; color: var(--muted); background: rgba(255,255,255,0.06); padding: 2px 8px; border-radius: 4px; }
+.sc-arrow { color: var(--muted); font-size: 12px; transition: transform .2s; }
+.scenario-card.open .sc-arrow { transform: rotate(180deg); }
+.scenario-body { display: none; padding: 20px; }
+.scenario-card.open .scenario-body { display: block; }
+.scenario-pain {
+  background: rgba(255,80,80,0.06); border: 1px solid rgba(255,80,80,0.15);
+  border-radius: 6px; padding: 10px 14px; margin-bottom: 10px;
+  font-size: 12px; color: rgba(255,180,180,0.85); line-height: 1.7;
+}
+.scenario-after {
+  background: rgba(60,219,93,0.06); border: 1px solid rgba(60,219,93,0.15);
+  border-radius: 6px; padding: 10px 14px; margin-bottom: 12px;
+  font-size: 12px; color: rgba(150,240,170,0.85); line-height: 1.7;
+}
+.scenario-after strong { color: var(--wm-green); }
+.scenario-steps { display: flex; flex-direction: column; gap: 8px; }
+.sstep { display: flex; gap: 10px; align-items: flex-start; }
+.sstep-num {
+  width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; margin-top: 1px;
+  background: rgba(74,159,224,0.15); border: 1px solid rgba(74,159,224,0.3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; color: var(--wm-lblue);
+}
+.sstep-content { flex: 1; font-size: 12px; color: var(--muted2); line-height: 1.6; }
+.sstep-content strong { color: var(--wm-white); font-weight: 500; }
+.sstep-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.stag {
+  font-size: 10px; padding: 1px 7px; border-radius: 3px; font-weight: 500;
+}
+.stag-wm { background: rgba(60,219,93,0.12); color: var(--wm-green); border: 1px solid rgba(60,219,93,0.2); }
+.stag-jo { background: rgba(74,159,224,0.12); color: var(--wm-lblue); border: 1px solid rgba(74,159,224,0.2); }
+.stag-sap { background: rgba(31,86,174,0.2); color: #89B4F7; border: 1px solid rgba(89,148,247,0.25); }
+.stag-sf { background: rgba(0,112,210,0.15); color: #7BBFF7; border: 1px solid rgba(123,191,247,0.2); }
+
+/* ── DEMO SECTION ── */
+.demo-section {
+  background: var(--wm-dark); border-top: 1px solid var(--wm-border); border-bottom: 1px solid var(--wm-border);
+  padding: 72px 0;
+}
+.demo-inner { max-width: 1080px; margin: 0 auto; padding: 0 40px; }
+.demo-tabs {
+  display: flex; border: 1px solid var(--wm-border); border-radius: 8px;
+  overflow: hidden; margin-bottom: 24px; flex-wrap: wrap;
+}
+.demo-tab {
+  flex: 1; min-width: 100px; padding: 10px 8px; text-align: center;
+  font-size: 12px; font-weight: 500; color: var(--muted); cursor: pointer;
+  background: rgba(255,255,255,0.03); border-right: 1px solid var(--wm-border);
+  transition: all .15s;
+}
+.demo-tab:last-child { border-right: none; }
+.demo-tab.active { background: var(--wm-green); color: var(--wm-dark); font-weight: 700; }
+.demo-panel { display: none; }
+.demo-panel.active { display: block; }
+
+/* Step indicator */
+.step-ind { display: flex; border: 1px solid var(--wm-border); border-radius: 6px; overflow: hidden; margin-bottom: 10px; }
+.si {
+  flex: 1; padding: 6px 4px; text-align: center; font-size: 10px; font-weight: 500;
+  color: var(--muted); background: rgba(255,255,255,0.02);
+  border-right: 1px solid var(--wm-border); transition: all .25s;
+}
+.si:last-child { border-right: none; }
+.si.done { color: var(--wm-green); background: rgba(60,219,93,0.08); }
+.si.active { color: var(--wm-green); background: rgba(60,219,93,0.12); font-weight: 700; }
+.prog { height: 2px; background: var(--wm-border); border-radius: 1px; margin-bottom: 14px; overflow: hidden; }
+.prog-fill { height: 100%; background: linear-gradient(90deg, var(--wm-green), var(--wm-lblue)); border-radius: 1px; transition: width .5s ease; }
+
+/* Browser chrome */
+.browser {
+  background: #1A1F2E; border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px; overflow: hidden;
+}
+.browser-bar {
+  background: #12172A; border-bottom: 1px solid rgba(255,255,255,0.08);
+  padding: 9px 14px; display: flex; align-items: center; gap: 10px;
+}
+.bdots { display: flex; gap: 5px; }
+.bdot { width: 10px; height: 10px; border-radius: 50%; }
+.burl {
+  flex: 1; background: rgba(255,255,255,0.06); border-radius: 4px;
+  padding: 4px 10px; font-size: 10px; font-family: monospace; color: rgba(255,255,255,0.35);
+}
+.bcontent { min-height: 340px; position: relative; padding: 0; overflow: hidden; }
+
+/* ── SALESFORCE MOCK ── */
+.sf-shell { height: 340px; display: flex; flex-direction: column; background: #F3F3F3; }
+.sf-topbar {
+  background: var(--sf-dark); padding: 0 14px; height: 38px;
+  display: flex; align-items: center; gap: 12px;
+}
+.sf-logo-area { display: flex; align-items: center; gap: 6px; }
+.sf-cloud { width: 24px; height: 16px; background: var(--wm-white); border-radius: 50% 50% 0 0; position: relative; opacity: .9; }
+.sf-logo-text { font-size: 11px; font-weight: 700; color: white; }
+.sf-nav-items { display: flex; gap: 0; margin-left: 8px; }
+.sf-nav-item { padding: 0 10px; height: 38px; display: flex; align-items: center; font-size: 11px; color: rgba(255,255,255,0.7); cursor: pointer; }
+.sf-nav-item.active { color: white; border-bottom: 2px solid white; }
+.sf-subtab { background: #F3F2F2; border-bottom: 1px solid #DDDBDA; padding: 0 14px; height: 36px; display: flex; align-items: center; gap: 0; }
+.sf-subtab-item { padding: 0 14px; height: 36px; display: flex; align-items: center; font-size: 12px; color: #706E6B; cursor: pointer; }
+.sf-subtab-item.active { color: var(--sf-blue); border-bottom: 2px solid var(--sf-blue); background: white; font-weight: 600; }
+.sf-content { flex: 1; overflow: hidden; background: white; padding: 14px; }
+.sf-record-title { font-size: 18px; font-weight: 700; color: #181818; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+.sf-stage-badge { font-size: 11px; padding: 3px 10px; border-radius: 100px; font-weight: 600; }
+.sf-detail-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.sf-field { display: flex; flex-direction: column; gap: 2px; }
+.sf-field-label { font-size: 10px; color: #706E6B; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+.sf-field-val { font-size: 13px; color: #181818; padding: 4px 0; border-bottom: 1px solid #DDDBDA; }
+.sf-field-val.highlight { color: var(--sf-blue); font-weight: 600; }
+.sf-btn { background: var(--sf-blue); color: white; border: none; padding: 7px 16px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; margin-top: 10px; }
+.sf-btn:hover { background: #005FB2; }
+
+/* ── SAP FIORI MOCK ── */
+.sap-shell { height: 340px; display: flex; flex-direction: column; background: #F5F6F7; }
+.sap-topbar {
+  background: var(--sap-dark); padding: 0 14px; height: 38px;
+  display: flex; align-items: center; gap: 12px;
+}
+.sap-logo { font-size: 12px; font-weight: 700; color: white; letter-spacing: -.3px; display: flex; align-items: center; gap: 6px; }
+.sap-logo-box { background: #3CCF9E; width: 22px; height: 22px; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 900; color: #003B73; }
+.sap-screen-title { font-size: 11px; color: rgba(255,255,255,.7); margin-left: auto; }
+.sap-wt-badge {
+  font-size: 10px; color: var(--wm-green); background: rgba(60,219,93,0.12);
+  border: 1px solid rgba(60,219,93,0.25); padding: 2px 8px; border-radius: 3px;
+  display: flex; align-items: center; gap: 4px;
+}
+.sap-wt-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--wm-green); animation: pulse 1.5s ease-in-out infinite; }
+.sap-content { flex: 1; padding: 12px 14px; overflow: hidden; }
+.sap-section-title { font-size: 10px; font-weight: 700; color: #6B6D70; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 8px; }
+.sap-form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+.sap-field { display: flex; flex-direction: column; gap: 2px; }
+.sap-label { font-size: 10px; color: #6B6D70; font-weight: 600; }
+.sap-input {
+  border: 1px solid #BABBBD; background: white; border-radius: 3px;
+  padding: 5px 8px; font-size: 12px; color: #1C1C1C; min-height: 28px;
+  transition: border-color .2s, background .2s;
+}
+.sap-input.required { border-left: 3px solid var(--sap-blue); }
+.sap-input.filled { border-color: var(--wm-green); background: #F0FFF4; color: #1A6B3A; animation: fillFlash .8s ease; }
+.sap-input.warn { border-color: #E86C00; background: #FFF6F0; color: #8B3A00; }
+@keyframes fillFlash { 0%{background:#C6F6D5;} 100%{background:#F0FFF4;} }
+.sap-table-wrap { background: white; border: 1px solid #BABBBD; border-radius: 3px; overflow: hidden; }
+.sap-table-head { background: #F5F6F7; padding: 5px 8px; font-size: 10px; font-weight: 700; color: #6B6D70; text-transform: uppercase; letter-spacing: .5px; border-bottom: 1px solid #BABBBD; display: flex; gap: 0; }
+.sap-table-head-cell { flex: 1; padding: 0 4px; }
+.sap-table-row { display: flex; gap: 0; border-bottom: 1px solid #EBEBEB; }
+.sap-table-cell { flex: 1; padding: 5px 12px; font-size: 11px; color: #1C1C1C; }
+.sap-table-cell .sap-input { border: none; background: transparent; padding: 0; font-size: 11px; width: 100%; }
+.sap-table-cell .sap-input.filled { background: #F0FFF4; padding: 2px 4px; border-radius: 2px; }
+
+/* ══════════════════════════════════════════
+   WalkMe Action Bar — 画像完全準拠デザイン
+   ══════════════════════════════════════════ */
+
+/* ── Action Bar 本体（画面最下部・1段・横長） ── */
+.walkme-ab {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: #FFFFFF;
+  border-top: 1px solid #E2E8F0;
+  box-shadow: 0 -2px 16px rgba(0,0,0,.10);
+  z-index: 50;
+  height: 48px;
+  display: flex; align-items: center;
+  padding: 0 10px; gap: 6px;
+  transform: translateY(100%);
+  transition: transform .3s cubic-bezier(.16,1,.3,1);
+}
+.walkme-ab.show { transform: translateY(0); }
+
+/* 左端：WalkMe「me」ロゴ（青い丸）*/
+.ab-me-logo {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: #0A66C2;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 900; color: white;
+  flex-shrink: 0; cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0,0,0,.2);
+}
+
+/* 左端アイコングループ（Image2 の ✤ ☐ アイコン） */
+.ab-icon-btn {
+  width: 28px; height: 28px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; color: #64748B; cursor: pointer; flex-shrink: 0;
+  transition: background .15s;
+}
+.ab-icon-btn:hover { background: #F1F5F9; }
+
+/* 中央コンテンツエリア（ボタン群） */
+.ab-center { display: flex; align-items: center; gap: 6px; flex: 1; overflow: hidden; }
+
+/* ピルボタン（Image1,2 共通デザイン） */
+.ab-pill {
+  display: flex; align-items: center; gap: 5px;
+  padding: 5px 14px; border-radius: 100px;
+  font-size: 12px; font-weight: 500; color: #334155;
+  background: #F1F5F9; border: 1px solid #E2E8F0;
+  cursor: pointer; white-space: nowrap; flex-shrink: 0;
+  transition: all .15s;
+}
+.ab-pill:hover { background: #E2E8F0; border-color: #CBD5E1; }
+/* アクティブ（Image2 の「Suggestions」の青塗りスタイル） */
+.ab-pill.active-blue {
+  background: #1D4ED8; color: white; border-color: #1D4ED8;
+}
+.ab-pill.active-blue:hover { background: #1E40AF; }
+/* Tools の紫スタイル（Image2） */
+.ab-pill.active-purple {
+  background: #7C3AED; color: white; border-color: #7C3AED;
+}
+/* グリーン（提案・推奨） */
+.ab-pill.active-green {
+  background: #16A34A; color: white; border-color: #16A34A;
+}
+.ab-pill.active-green:hover { background: #15803D; }
+
+/* Action Bar 右端アイコン群 */
+.ab-right { display: flex; align-items: center; gap: 4px; margin-left: auto; flex-shrink: 0; }
+.ab-right-btn {
+  width: 28px; height: 28px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; color: #94A3B8; cursor: pointer;
+  transition: background .15s;
+}
+.ab-right-btn:hover { background: #F1F5F9; color: #475569; }
+
+/* ── WalkMe AIカードポップアップ（Image1 準拠：独立した白いカード） ── */
+.wm-card-overlay {
+  position: absolute; top: 50px; left: 50%; transform: translateX(-50%);
+  width: 420px; max-width: calc(100% - 24px);
+  background: white; border: 1px solid #E2E8F0; border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.15), 0 2px 8px rgba(0,0,0,.08);
+  z-index: 60; display: none;
+  animation: cardSlideUp .25s cubic-bezier(.16,1,.3,1);
+}
+@keyframes cardSlideUp { from{opacity:0;transform:translateX(-50%) translateY(12px);} to{opacity:1;transform:translateX(-50%) translateY(0);} }
+.wm-card-overlay.show { display: block; }
+
+/* カードヘッダー */
+.wm-card-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 14px 10px;
+  border-bottom: 1px solid #F1F5F9;
+}
+.wm-card-me { width: 22px; height: 22px; border-radius: 50%; background: #0A66C2; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 900; color: white; flex-shrink: 0; }
+.wm-card-title { font-size: 13px; font-weight: 600; color: #0F172A; flex: 1; }
+.wm-card-ai-warn { font-size: 10px; color: #94A3B8; }
+.wm-card-icons { display: flex; gap: 4px; }
+.wm-card-icon { font-size: 14px; color: #94A3B8; cursor: pointer; padding: 2px; }
+.wm-card-icon:hover { color: #475569; }
+
+/* カード本文 */
+.wm-card-body { padding: 12px 14px; }
+.wm-card-desc { font-size: 12px; color: #475569; line-height: 1.7; margin-bottom: 10px; }
+
+/* 緑チェックタグチップ（Image1 の C-level, Industry relevance... スタイル） */
+.wm-card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.wm-tag {
+  display: flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 100px; font-size: 11px; font-weight: 500;
+  background: white; border: 1.5px solid #16A34A; color: #15803D;
+}
+.wm-tag.selected { background: #DCFCE7; border-color: #16A34A; }
+.wm-tag.warn { background: #FEF2F2; border-color: #DC2626; color: #991B1B; }
+.wm-tag.warn .wm-tag-check { background: #DC2626; }
+.wm-tag-check { width: 14px; height: 14px; background: #16A34A; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 8px; color: white; flex-shrink: 0; }
+
+/* カード詳細本文 */
+.wm-card-detail { font-size: 12px; color: #475569; line-height: 1.75; background: #F8FAFC; border-radius: 6px; padding: 10px 12px; margin-bottom: 10px; }
+.wm-card-detail strong { color: #0F172A; }
+.wm-card-detail .wm-link { color: #1D4ED8; cursor: pointer; text-decoration: underline; }
+
+/* カードフッター（Copy ＋ 更新ボタン） */
+.wm-card-footer { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-top: 1px solid #F1F5F9; }
+.wm-copy-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 16px; border-radius: 100px;
+  background: #1D4ED8; color: white; border: none;
+  font-size: 12px; font-weight: 600; cursor: pointer; transition: background .15s;
+}
+.wm-copy-btn:hover { background: #1E40AF; }
+.wm-refresh-btn {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: #F1F5F9; border: 1px solid #E2E8F0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; cursor: pointer; color: #64748B;
+  transition: all .15s;
+}
+.wm-refresh-btn:hover { background: #E2E8F0; }
+
+/* ── SmartTips（緑グラデーション?アイコン＋白カードポップオーバー） ── */
+.wm-smarttip-icon {
+  position: absolute; right: -7px; bottom: -7px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: linear-gradient(135deg, #3CDB5D, #4A9FE0);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; color: white; font-weight: 900;
+  cursor: pointer; z-index: 10; box-shadow: 0 1px 4px rgba(0,0,0,.2);
+  transition: transform .15s;
+}
+.wm-smarttip-icon:hover { transform: scale(1.2); }
+.wm-smarttip-pop {
+  position: absolute; top: calc(100% + 8px); left: 0; transform: none;
+  background: white; border: 1px solid #E2E8F0; border-radius: 10px;
+  padding: 10px 12px; width: 190px; z-index: 65;
+  box-shadow: 0 4px 16px rgba(0,0,0,.12);
+  display: none;
+}
+.wm-smarttip-pop.show { display: block; }
+.wm-smarttip-pop::before {
+  content: ''; position: absolute; top: -7px; left: 14px;
+  width: 12px; height: 12px; background: white;
+  border-left: 1px solid #E2E8F0; border-top: 1px solid #E2E8F0;
+  transform: rotate(45deg);
+}
+.st-pop-title { font-size: 10px; font-weight: 700; color: #16A34A; margin-bottom: 4px; }
+.st-pop-body { font-size: 11px; color: #334155; line-height: 1.6; margin-bottom: 6px; }
+.st-pop-link { font-size: 10px; color: #1D4ED8; cursor: pointer; }
+.st-pop-link:hover { text-decoration: underline; }
+
+/* AI Suggestion（画面右下の白カード） */
+.wm-ai-tip {
+  position: absolute; right: 12px; top: 60px;
+  background: white; border: 1px solid #E2E8F0; border-radius: 10px;
+  padding: 10px 12px; width: 200px; z-index: 55;
+  box-shadow: 0 4px 16px rgba(0,0,0,.12);
+  display: none;
+}
+.wm-ai-tip.show { display: block; }
+.wm-ai-tip-head { font-size: 10px; font-weight: 700; color: #16A34A; margin-bottom: 4px; display: flex; align-items: center; gap: 4px; }
+.wm-ai-tip-body { font-size: 11px; color: #334155; line-height: 1.65; }
+.wm-ai-tip-body strong { color: #0F172A; }
+
+/* Walk-Thru バルーン（白地・緑ボーダー） */
+.wt-balloon {
+  position: absolute; background: white; border: 2px solid #3CDB5D;
+  border-radius: 10px; padding: 10px 12px; max-width: 210px; z-index: 40;
+  display: none; box-shadow: 0 4px 12px rgba(0,0,0,.08);
+}
+.wt-balloon.show { display: block; }
+.wt-balloon::after {
+  content: ''; position: absolute; bottom: -8px; left: 18px;
+  width: 12px; height: 12px; background: white;
+  border-right: 2px solid #3CDB5D; border-bottom: 2px solid #3CDB5D;
+  transform: rotate(45deg);
+}
+.wt-title { font-size: 10px; font-weight: 700; color: #15803D; letter-spacing: .3px; margin-bottom: 4px; display: flex; align-items: center; gap: 4px; }
+.wt-text { font-size: 11px; color: #334155; line-height: 1.5; }
+.wt-step { font-size: 9px; color: #94A3B8; margin-top: 5px; }
+
+/* ── デモコントロール ── */
+.demo-controls { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.demo-btn {
+  padding: 7px 16px; border-radius: 5px; font-size: 11px; font-weight: 600;
+  cursor: pointer; border: 1px solid var(--wm-border); background: rgba(255,255,255,0.05);
+  color: var(--muted2); transition: all .15s;
+}
+.demo-btn:hover { border-color: var(--wm-green); color: var(--wm-green); }
+.demo-btn.primary { background: var(--wm-green); color: var(--wm-dark); border-color: var(--wm-green); }
+.demo-btn.primary:hover { background: var(--wm-green2); }
+.demo-log {
+  margin-top: 10px; background: rgba(0,0,0,.3); border: 1px solid var(--wm-border);
+  border-radius: 4px; padding: 8px 10px; font-family: monospace; font-size: 10px;
+  line-height: 1.9; max-height: 80px; overflow-y: auto; color: var(--muted);
+}
+.log-wm { color: var(--wm-green); }
+.log-jo { color: var(--wm-lblue); }
+.log-ok { color: #28C840; }
+.log-warn { color: #FFB347; }
+/* legacy compat */
+.ab-header { display:none; }
+.ab-body { display:none; }
+.ab-ai-panel { display:none; }
+.ab-ai-panel.show { display:none; }
+.joule-panel { display:none !important; }
+
+/* ── CONCERN SECTION ── */
+.concern-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 40px; }
+.concern-card { background: rgba(255,255,255,0.03); border: 1px solid var(--wm-border); border-radius: 8px; overflow: hidden; }
+.concern-head {
+  display: flex; align-items: center; gap: 10px; padding: 12px 16px; cursor: pointer; transition: background .15s;
+}
+.concern-head:hover { background: rgba(255,255,255,0.03); }
+.risk-tag { font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 3px; letter-spacing: .5px; text-transform: uppercase; flex-shrink: 0; }
+.risk-high { background: rgba(255,80,80,0.12); color: #FF9090; border: 1px solid rgba(255,80,80,0.2); }
+.risk-med { background: rgba(255,183,77,0.12); color: #FFB347; border: 1px solid rgba(255,183,77,0.2); }
+.risk-low { background: rgba(60,219,93,0.1); color: var(--wm-green); border: 1px solid rgba(60,219,93,0.2); }
+.concern-title { font-size: 13px; font-weight: 500; color: var(--wm-white); flex: 1; line-height: 1.4; }
+.concern-arr { color: var(--muted); transition: transform .2s; }
+.concern-card.open .concern-arr { transform: rotate(180deg); }
+.concern-detail { display: none; padding: 0 16px 14px; }
+.concern-card.open .concern-detail { display: block; }
+.concern-issue { font-size: 12px; color: var(--muted2); line-height: 1.75; margin-bottom: 8px; }
+.concern-resolve {
+  background: rgba(60,219,93,0.06); border: 1px solid rgba(60,219,93,0.15);
+  border-radius: 5px; padding: 8px 12px; font-size: 12px; color: rgba(150,240,170,.85); line-height: 1.75;
+}
+.concern-resolve strong { color: var(--wm-green); }
+
+/* ── TEAM ── */
+.team-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-bottom: 32px; }
+.team-card { background: rgba(255,255,255,0.03); border: 1px solid var(--wm-border); border-radius: 8px; padding: 18px; }
+.team-role-badge { font-size: 10px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--wm-green); margin-bottom: 6px; }
+.team-title { font-size: 14px; font-weight: 600; color: var(--wm-white); margin-bottom: 4px; }
+.team-count { font-size: 28px; font-weight: 700; color: var(--wm-green); line-height: 1.2; margin-bottom: 2px; }
+.team-unit { font-size: 11px; color: var(--muted); margin-bottom: 12px; }
+.team-tasks { display: flex; flex-direction: column; gap: 4px; }
+.team-task { font-size: 11px; color: var(--muted2); display: flex; gap: 6px; align-items: flex-start; line-height: 1.5; }
+.team-task::before { content: '—'; color: rgba(60,219,93,0.4); flex-shrink: 0; }
+
+.license-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 32px; }
+.lic-card { background: rgba(31,86,174,0.08); border: 1px solid rgba(74,159,224,0.15); border-radius: 8px; padding: 14px 16px; }
+.lic-title { font-size: 12px; font-weight: 600; color: var(--wm-white); margin-bottom: 4px; }
+.lic-detail { font-size: 11px; color: var(--muted2); line-height: 1.5; }
+
+/* ── ARCH ── */
+.arch-box { background: rgba(255,255,255,0.02); border: 1px solid var(--wm-border); border-radius: 8px; overflow: hidden; margin-bottom: 24px; }
+.arch-title { padding: 10px 16px; background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--wm-border); font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+.arch-body { padding: 18px; }
+.arch-layer { display: flex; align-items: flex-start; gap: 10px; padding: 8px 12px; border-radius: 6px; margin-bottom: 6px; }
+.arch-layer:last-child { margin-bottom: 0; }
+.arch-lbl { font-size: 10px; font-weight: 600; color: var(--muted); width: 90px; flex-shrink: 0; padding-top: 4px; text-transform: uppercase; letter-spacing: .5px; }
+.arch-nodes { display: flex; flex-wrap: wrap; gap: 5px; flex: 1; }
+.arch-node { padding: 3px 10px; border-radius: 4px; font-size: 10px; font-weight: 500; border: 1px solid; }
+.arch-arrow { text-align: center; font-size: 11px; color: var(--muted); padding: 2px 0 2px 100px; }
+
+/* ── VERDICT ── */
+.verdict { border-left: 3px solid; padding: 10px 14px; border-radius: 0 6px 6px 0; margin-bottom: 16px; font-size: 12px; line-height: 1.75; }
+.v-ok { border-color: var(--wm-green); background: rgba(60,219,93,0.06); color: rgba(150,240,170,.85); }
+.v-ok strong { color: var(--wm-green); }
+.v-info { border-color: var(--wm-lblue); background: rgba(74,159,224,0.06); color: rgba(160,200,255,.85); }
+.v-info strong { color: var(--wm-lblue); }
+
+/* ── BADGE ── */
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; letter-spacing: .3px; }
+.badge-green { background: rgba(60,219,93,0.12); color: var(--wm-green); border: 1px solid rgba(60,219,93,0.2); }
+.badge-blue { background: rgba(74,159,224,0.12); color: var(--wm-lblue); border: 1px solid rgba(74,159,224,0.2); }
+.badge-warn { background: rgba(255,183,77,0.12); color: #FFB347; border: 1px solid rgba(255,183,77,0.2); }
+
+/* ── FOOTER ── */
+.footer {
+  text-align: center; padding: 40px; border-top: 1px solid var(--wm-border);
+  font-size: 11px; color: var(--muted); letter-spacing: .5px;
+}
+
+/* ── SECTION DIVIDER ── */
+.sec-divider { height: 1px; background: var(--wm-border); margin: 0; }
+
+@media (max-width: 640px) {
+  section, .hero-wrap, .demo-inner { padding-left: 20px; padding-right: 20px; }
+  .nav { padding: 0 16px; }
+  .sap-form-grid, .sf-detail-grid { grid-template-columns: 1fr 1fr; }
+  .walkme-ab { width: calc(100vw - 24px); right: 12px; }
+}
+
+/* ══ SAP Fiori Horizon 追加スタイル ══ */
+.sap-shell { display:flex; flex-direction:column; background:#F5F6F7; }
+.sap-content { background:#F5F6F7; }
+.sap-section-card { background:white; border:1px solid #89919A; border-radius:4px; margin-bottom:8px; overflow:hidden; }
+.sap-section-card-header { padding:7px 12px; background:#F5F6F7; border-bottom:1px solid #E5E5E5; font-size:10px; font-weight:700; color:#6A6D70; text-transform:uppercase; letter-spacing:.5px; }
+/* WalkMe Action Bar の ab-pills overflow fix */
+.walkme-ab .ab-pills { min-width:0; }
+.walkme-ab .ab-pill { flex-shrink:0; }
+/* UKM カード */
+.ukm-card { background:white; border:1px solid #89919A; border-radius:4px; padding:9px 12px; margin-bottom:6px; }
+.ukm-card.ukm-pending { border-left:4px solid #E86C00; }
+.ukm-card.ukm-done { border-left:4px solid #36A41D; }
+.ukm-card.ukm-dim { border-left:4px solid #89919A; opacity:.6; }
+
+/* SWT フィールドハイライト */
+.sap-field-highlighted .sap-input {
+  border: 2px solid #3CDB5D !important;
+  box-shadow: 0 0 0 3px rgba(60,219,93,0.15);
+  background: #F0FFF4 !important;
+}
+.sap-field-highlighted .sap-label {
+  color: #15803D !important;
+  font-weight: 700;
+}
+/* SWT バルーン（フィールド上部） */
+.wt-balloon-top {
+  position: absolute;
+  top: -68px; left: 0; right: 0;
+  background: white;
+  border: 2px solid #3CDB5D;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 11px;
+  color: #334155;
+  z-index: 50;
+  box-shadow: 0 4px 12px rgba(0,0,0,.1);
+  display: none;
+  line-height: 1.5;
+}
+.wt-balloon-top.show { display: block; }
+.wt-balloon-top::after {
+  content: '';
+  position: absolute;
+  bottom: -8px; left: 16px;
+  width: 12px; height: 12px;
+  background: white;
+  border-right: 2px solid #3CDB5D;
+  border-bottom: 2px solid #3CDB5D;
+  transform: rotate(45deg);
+}
+.wt-balloon-top-title { font-size: 10px; font-weight: 700; color: #15803D; margin-bottom: 3px; display: flex; align-items: center; gap: 4px; }
+.wt-step-badge { font-size: 9px; background: #DCFCE7; color: #15803D; padding: 1px 6px; border-radius: 3px; margin-left: auto; }
+
+/* ── Loading overlay ── */
+.demo-load{
+  position:absolute;inset:0;z-index:55;
+  background:rgba(15,23,42,.85);
+  display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+}
+.demo-load.show{display:flex;}
+.demo-load-spin{
+  width:28px;height:28px;border:3px solid rgba(255,255,255,.15);
+  border-top-color:#3CDB5D;border-radius:50%;
+  animation:dlspin .8s linear infinite;
+}
+@keyframes dlspin{to{transform:rotate(360deg)}}
+.demo-load-txt{font-size:11px;color:rgba(255,255,255,.7);font-weight:500;text-align:center;line-height:1.5;}
+</style>
+</head>
+<body>
+<div class="hero-bg"></div>
+
+<!-- NAVIGATION -->
+<nav class="nav" id="main-nav">
+  <div class="nav-logo">
+    <div class="nav-logo-mark">W</div>
+    WalkMe AI Action Bar
+  </div>
+  <div class="nav-items">
+    <div class="nav-item active" onclick="goTo('hero')">概要</div>
+    <div class="nav-item" onclick="goTo('summary')">サマリ</div>
+    <div class="nav-item" onclick="goTo('scenario')">シナリオ</div>
+    <div class="nav-item" onclick="goTo('demo')">デモ</div>
+    <div class="nav-item" onclick="goTo('concerns')">懸念点</div>
+    <div class="nav-item" onclick="goTo('team')">チーム</div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero-wrap" id="hero">
+  <div class="hero-eyebrow">
+    <div class="eyebrow-dot"></div>
+    <span class="eyebrow-text">デモ環境構築 — チーム編成承認依頼</span>
+  </div>
+  <h1>SAP × WalkMe<br><span>WalkMe AI Action Bar</span><br>デモ環境構築計画</h1>
+  <p class="hero-sub">受注登録業務を例に、担当者がタブを切り替えることなく Joule AI と対話しながら複数システムをまたいだ業務を完走するデモ環境を構築する。4AI評価（SAP業務妥当性・技術実現性・変革管理・競合比較）+ SAP Joule for Consultants検証の結果を反映したv5版。</p>
+  <div class="hero-ctas">
+    <button class="btn-primary" onclick="goTo('summary')">サマリを見る</button>
+    <button class="btn-secondary" onclick="goTo('demo')">デモを動かす</button>
+  </div>
+  <div class="hero-chips">
+    <div class="chip chip-green"><span>●</span> WalkMe AI Action Bar（2026年5月 GA予定）</div>
+    <div class="chip chip-blue"><span>●</span> SAP S/4HANA Cloud</div>
+    <div class="chip chip-indigo"><span>●</span> Salesforce</div>
+    <div class="chip chip-white"><span>●</span> 対象: Order-to-Cash</div>
+  </div>
+</div>
+
+<!-- SUMMARY -->
+<div class="sec-divider"></div>
+<section id="summary">
+  <div class="sec-eyebrow">Summary</div>
+  <div class="sec-title">なぜ今、このデモ環境が必要か</div>
+  <div class="summary-box">
+    <p>WalkMe AI Action Barとしての機能を活用した<strong>日本語のデモ環境を構築することで、WalkMe 3.0の世界観を端的にSAP顧客へ示し</strong>、競合他社に対して<strong>明確な差別化優位を獲得できる</strong>。</p>
+  </div>
+
+  <div class="sec-eyebrow">承認依頼の内容</div>
+  <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:40px;">
+    <div class="verdict v-info"><strong>01</strong> &nbsp;デモ環境構築チームの組成（4名・3ヶ月）への承認</div>
+    <div class="verdict v-info"><strong>02</strong> &nbsp;SAP S/4HANA Cloud・WalkMeテナント・Jouleライセンスの準備承認</div>
+    <div class="verdict v-info"><strong>03</strong> &nbsp;2026年5月〜7月を「デモ環境集中整備期間」として指定することへの承認</div>
+  </div>
+
+  <div class="sec-eyebrow">担当者ペルソナ</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:40px;">
+    <div style="background:rgba(31,86,174,0.1);border:1px solid rgba(74,159,224,0.2);border-radius:8px;padding:16px;">
+      <div style="font-size:11px;font-weight:700;color:var(--wm-lblue);letter-spacing:.5px;margin-bottom:4px;">PERSONA 01</div>
+      <div style="font-size:14px;font-weight:700;color:var(--wm-white);margin-bottom:2px;">田中さん — 営業担当</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Salesforce + S/4HANA 毎日受注処理</div>
+      <div style="font-size:12px;color:var(--muted2);line-height:1.7;">SFで商談クローズ後、SAPへ手動転記→与信確認→複数明細入力。タブ切替が多く、転記ミスや入力漏れが頻発していた</div>
+      <div style="margin-top:8px;"><span class="badge badge-green">効率化</span></div>
+    </div>
+    <div style="background:rgba(61,47,160,0.12);border:1px solid rgba(139,127,232,0.2);border-radius:8px;padding:16px;">
+      <div style="font-size:11px;font-weight:700;color:#8B7FE8;letter-spacing:.5px;margin-bottom:4px;">PERSONA 02</div>
+      <div style="font-size:14px;font-weight:700;color:var(--wm-white);margin-bottom:2px;">鈴木さん — 与信管理担当</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">S/4HANA 与信承認担当</div>
+      <div style="font-size:12px;color:var(--muted2);line-height:1.7;">電話・メールで属人的に与信照会が来る。承認画面を都度検索。承認根拠をゼロから調べてメールに書いていた</div>
+      <div style="margin-top:8px;"><span class="badge badge-blue">判断補助</span><span class="badge badge-warn" style="margin-left:4px;">電話→例外ESC化</span></div>
+    </div>
+    <div style="background:rgba(60,219,93,0.06);border:1px solid rgba(60,219,93,0.15);border-radius:8px;padding:16px;">
+      <div style="font-size:11px;font-weight:700;color:var(--wm-green);letter-spacing:.5px;margin-bottom:4px;">PERSONA 03</div>
+      <div style="font-size:14px;font-weight:700;color:var(--wm-white);margin-bottom:2px;">中村さん — 新入社員</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">入社3ヶ月 営業SDユーザー</div>
+      <div style="font-size:12px;color:var(--muted2);line-height:1.7;">手順が分からず先輩に毎回確認。支払条件の意味・明細行の追加方法が分からずマニュアル頼み</div>
+      <div style="margin-top:8px;"><span class="badge badge-green">習熟不要化</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- SCENARIO -->
+<div class="sec-divider"></div>
+<section id="scenario">
+  <div class="sec-eyebrow">Demo Scenario</div>
+  <div class="sec-title">デモシナリオ詳細</div>
+  <p class="sec-body">受注登録業務（Order-to-Cash）を例に、WalkMe AI Action Barがどのように担当者の業務を支援するかを3つのペルソナで示す。</p>
+
+  <div style="background:rgba(255,255,255,0.02);border:1px solid var(--wm-border);border-radius:8px;padding:16px 20px;margin-bottom:24px;">
+    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">シナリオ前提</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;font-size:12px;color:var(--muted2);">
+      <div><span style="color:var(--muted);font-size:10px;display:block;margin-bottom:2px;">対象プロセス</span>受注登録（Order-to-Cash）</div>
+      <div><span style="color:var(--muted);font-size:10px;display:block;margin-bottom:2px;">対象システム</span>Salesforce Sales Cloud（別タブ起点）+ SAP S/4HANA Cloud Fiori（別タブ）</div>
+      <div><span style="color:var(--muted);font-size:10px;display:block;margin-bottom:2px;">統合レイヤー</span>IAS/IPS（SalesforceとS/4HANAのSSO統合・全5レイヤー設定必須）</div>
+      <div><span style="color:var(--muted);font-size:10px;display:block;margin-bottom:2px;">AI機能</span>WalkMe AI Action Bar（入口）+ launcher / SWT / SmartTip / Validation（実処理）</div>
+      <div><span style="color:var(--muted);font-size:10px;display:block;margin-bottom:2px;">日本固有対応</span>Salesforce Opportunity ID → SAP参照番号（VBKD-IHREZ・最大35文字）へAutofill。デモ用途として成立。本番設計では運用規約を明示</div>
+      <div><span style="color:var(--muted);font-size:10px;display:block;margin-bottom:2px;">Clean Core方針</span>BTP Side-by-Side（ABAPカスタム不使用）</div>
+    </div>
+  </div>
+
+  <div class="scenario-grid">
+
+    <!-- SC1 -->
+    <div class="scenario-card" id="sc-card-1">
+      <div class="scenario-head" onclick="toggleScenario(1)">
+        <div class="sc-num">1</div>
+        <div class="sc-title">田中さん：Negotiation事前リスク確認 → 承認申請（画面で見せる）→ 受注登録完走</div>
+        <span class="sc-who">田中 / 営業</span>
+        <span class="sc-arrow">▾</span>
+      </div>
+      <div class="scenario-body">
+        <div class="scenario-pain">😤 <strong>導入前の課題：</strong> SalesforceとSAPを別タブで開いて手動転記。与信確認のためにさらに別の照会画面を開く。与信超過時は承認申請文を自分で作成してメール送信。複数明細の行追加方法も分からずエラー続出。1件の受注登録に多大な時間を要し、転記ミスや必須項目漏れによる差し戻しが日常的に発生</div>
+        <div class="scenario-after">✓ <strong>WalkMe AI Action Bar導入後：</strong> Negotiation段階でJouleが与信（UKM）・約束可能日（ATP）を事前リスク可視化。与信超過時は<strong>BPA事前申請フォームが申請文入力済みで開き確認送信するだけ</strong>（SAP標準のDCD承認を補助する外部導線）。Closed WonでSAP受注登録画面へ自動遷移。<strong>Salesforce Opportunity IDがSAP参照番号（VBKD-IHREZ）に自動入力</strong>（SAP標準フィールド活用・Clean Core維持）。複数明細はJoule AI出力継承+Smart Walk-Thruのハイブリッドでガイド</div>
+        <div class="scenario-steps">
+          <div class="sstep">
+            <div class="sstep-num">1</div>
+            <div class="sstep-content">
+              <strong>Salesforce（別ブラウザタブ）でNegotiationフェーズを検知</strong> → WalkMe DeepUIがコンテキストを読み取りAI Action Bar起動。Suggestionsに「与信・在庫の事前リスク確認を推奨」を表示<div style="font-size:10px;color:rgba(255,183,77,.7);margin-top:3px;">⚠ SalesforceはiFrame統合ではなく「WalkMe検知の起点」として独立タブで動作（CORS/clickjack保護の技術的制約を回避）</div>
+              <div class="sstep-tags"><span class="stag stag-wm">Context Detection</span><span class="stag stag-sf">Salesforce</span></div>
+            </div>
+          </div>
+          <div class="sstep">
+            <div class="sstep-num">2</div>
+            <div class="sstep-content">
+              <strong>Action Barの「✨ Jouleで与信・在庫を事前確認」をクリック</strong>（タイピング不要）。Jouleがリクエストを<strong>BTP集約API（1本化）</strong>経由でUKM/ATP/MMを並列処理し、与信余力（UKM）・約束可能日/数量（ATP/aATP）・参考在庫（MM）を自然言語で要約。参照時刻・根拠を必須表示。<strong>※参考値（事前リスク可視化）。確定の与信チェック・納期確認は受注登録時にSAP標準で実行。</strong>
+              <div class="sstep-tags"><span class="stag stag-jo">Joule 照会・要約（参考値）</span><span class="stag stag-sap">BTP集約API（UKM SOAP+ATP+MM並列）</span></div>
+            </div>
+          </div>
+          <div class="sstep">
+            <div class="sstep-num">3</div>
+            <div class="sstep-content">
+              <strong>与信超過を検出した場合</strong>、JouleがAction Bar内に承認申請文のドラフトを自動生成（根拠: UKM+FI-AR参照）。「与信承認を申請する」をクリックすると<strong>WalkMe RedirectでSAP BPA承認フォーム画面へ遷移</strong>。フォームにはJoule生成の申請文・超過額・取引先情報が<strong>自動入力済みの状態で開く</strong>。田中さんは内容を確認して「送信」するだけ。送信後WalkMeが自動でSalesforce画面に戻り「✓ 申請完了・鈴木さんへ通知済み」をAction Barに表示<div style="font-size:10px;color:rgba(255,183,77,.7);margin-top:3px;">※ SAP標準にはDocumented Credit Decision（DCD）の承認階層があります。BPAは標準承認の代替ではなく、事前申請・入力補助のための外部業務導線です。最終の与信判断結果はSAPのDCDに反映されます</div>
+              <div class="sstep-tags"><span class="stag stag-jo">Joule ドラフト自動生成</span><span class="stag stag-wm">Redirect → BPAフォーム（入力済みで開く）</span><span class="stag stag-wm">送信後Salesforceへ自動復帰</span></div>
+            </div>
+          </div>
+          <div class="sstep">
+            <div class="sstep-num">4</div>
+            <div class="sstep-content">
+              <strong>Action BarのRedirectでSAP S/4HANA Cloud Fiori受注登録画面へ直接遷移</strong>（WalkMeが自動でタブを切り替えるため担当者の操作不要）。ヘッダー標準項目は担当者が確認入力（Fit to Standard準拠）。<strong>Salesforce Opportunity ID（OPP-2026-0412）が参照番号フィールド（VBKD-IHREZ）にAutofillで自動入力</strong>。SAP標準フィールド（最大35文字）を活用・Clean Core完全維持。支払条件は得意先マスタの販売ビュー（KNVV）から第1優先で自動参照（ZB01はデモ用サンプルキー。本番では運用規約を明示すること）
+              <div class="sstep-tags"><span class="stag stag-wm">Autofill（Opportunity ID→参照番号）</span><span class="stag stag-sap">SAP標準フィールド VBKD-IHREZ</span><span class="stag stag-wm">Smart Walk-Thru起動</span></div>
+            </div>
+          </div>
+          <div class="sstep">
+            <div class="sstep-num">5</div>
+            <div class="sstep-content">
+              <strong>複数明細入力（AI出力継承方式）：</strong> 1〜2行目はJouleがATP確認しながらガイド → 出力値をWalkMe Dataに保存。3行目以降はSmart Walk-ThruがそのWalkMe Dataを参照しながらガイド。<strong>「会話のコンテキスト継承」ではなく「AI出力の継承」として設計</strong>（Jouleのネイティブコンテキスト引き継ぎAPIは未公開のため）。実装はDOM取得→定型フォーマット→Bridge APIの3段階でフェールバックを用意。明細行追加後のDOMはstable anchorベースセレクタで追従（data-sap-ui / aria-label優先、行番号指定禁止）
+              <div class="sstep-tags"><span class="stag stag-jo">Joule → WalkMe Data保存</span><span class="stag stag-wm">Smart Walk-Thru（Data参照）</span><span class="stag stag-sap">AI出力継承方式</span></div>
+            </div>
+          </div>
+          <div class="sstep">
+            <div class="sstep-num">6</div>
+            <div class="sstep-content">
+              <strong>全明細入力後、Jouleが受注サマリを確認提示</strong>→ 担当者が確認して保存。税額はSAP標準ロジックで確定（BTPは補助判定のみ）。与信ブロックは受注登録時にSAP標準与信チェックで自動設定。<strong>与信判断はManage Documented Credit Decisions（DCD）で行い、ブロック解除はDCD経由の標準処理フローで実施</strong>
+              <div class="sstep-tags"><span class="stag stag-jo">Joule サマリ確認</span><span class="stag stag-sap">与信ブロック→DCD経由で解除（SAP標準）</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SC2 -->
+    <div class="scenario-card" id="sc-card-2">
+      <div class="scenario-head" onclick="toggleScenario(2)">
+        <div class="sc-num">2</div>
+        <div class="sc-title">鈴木さん：電話対応ゼロ — Action Barで承認を一元管理</div>
+        <span class="sc-who">鈴木 / 与信管理</span>
+        <span class="sc-arrow">▾</span>
+      </div>
+      <div class="scenario-body">
+        <div class="scenario-pain">😤 <strong>導入前の課題：</strong> 田中さんから電話・メールで与信照会が来る。承認画面の場所を毎回検索。承認根拠（与信残高・回収実績）を自分で調べてメールに書く。月20件以上の属人的対応が発生していた</div>
+        <div class="scenario-after">✓ <strong>導入後：</strong> 鈴木さんのAction Barに<strong>「与信承認待ち N件」がバッジ表示</strong>。Jouleが<strong>UKM（与信限度額・リスククラス）＋FI-AR（回収実績）</strong>を横断参照し承認材料を根拠付きで自動要約。Action BarからManage Documented Credit DecisionsでRelease実行。<strong>定型的な与信照会の電話・メールがゼロに。電話は例外エスカレーション手段として格上げ</strong></div>
+        <div class="scenario-steps">
+          <div class="sstep">
+            <div class="sstep-num">1</div>
+            <div class="sstep-content">
+              <strong>鈴木さんのロール（SAP_BR_CREDIT_CONTROLLER相当）をWalkMe Segmentation Rulesが検知</strong> → 田中さんとは異なるAction Barを表示。「承認待ち 2件」のバッジが付く。<strong>Phase 1として最初に導入（最小ユーザー・最短ROI・Salesforce統合不要）</strong>
+              <div class="sstep-tags"><span class="stag stag-wm">Segmentation Rules（SAP_BR_CREDIT_CONTROLLER相当）</span></div>
+            </div>
+          </div>
+          <div class="sstep">
+            <div class="sstep-num">2</div>
+            <div class="sstep-content">
+              <strong>承認待ち案件をクリック</strong> → Jouleが<strong>BTP集約API経由でUKM（与信限度額・リスククラス）＋FI-AR（回収実績）</strong>を横断照会し承認材料を自動要約。調査・根拠作成ゼロで判断可能。<strong>※信用スコアはUKM設定・外部機関連携がある場合に参照。未設定環境では非表示。</strong><strong>※FI-AR DBTの直接参照API可用性は要確認（高度な支払行動指標には追加ライセンスが必要な場合あり）。</strong>UKMのAPIは主にSOAPサービスで提供。最終判断は必ず鈴木さんが実施
+              <div class="sstep-tags"><span class="stag stag-jo">Joule（UKM+FI-AR横断参照）</span><span class="stag stag-sap">BTP集約API</span></div>
+            </div>
+          </div>
+          <div class="sstep">
+            <div class="sstep-num">3</div>
+            <div class="sstep-content">
+              <strong>「承認する」をAction Barからクリック</strong> → Manage Documented Credit Decisions（Fiori App）でRelease実行。<strong>与信ブロック解除はDCDを経由し、ブロック対象受注の標準処理フローで実施</strong>。WalkMeが該当アプリへ誘導するため鈴木さんは画面を探す必要なし。田中さんへ完了通知を自動送信
+              <div class="sstep-tags"><span class="stag stag-wm">DCD画面誘導</span><span class="stag stag-sap">DCD経由でブロック解除（SAP標準）</span><span class="stag stag-sap">完了通知 自動送信</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SC3 -->
+    <div class="scenario-card" id="sc-card-3">
+      <div class="scenario-head" onclick="toggleScenario(3)">
+        <div class="sc-num">3</div>
+        <div class="sc-title">中村さん：マニュアル不要でゼロエラー完走</div>
+        <span class="sc-who">中村 / 新入社員</span>
+        <span class="sc-arrow">▾</span>
+      </div>
+      <div class="scenario-body">
+        <div class="scenario-pain">😤 <strong>導入前の課題：</strong> 80ページのマニュアル。支払条件の意味・明細行の追加方法・必須項目の漏れで先輩に毎回確認。独り立ちまで時間がかかり差し戻しも頻発していた</div>
+        <div class="scenario-after">✓ <strong>導入後：</strong> <strong>Smart Walk-Thruが全ステップをリアルタイムガイド。</strong> 「支払条件って何？」とAction Barに聞くとJouleが即座に平易な日本語で説明。WalkMe Input Validationが保存前チェックを補助し、不完全伝票の発生を事前に予防。ゼロエラー完走を実現<div style="font-size:10px;color:rgba(255,183,77,.7);margin-top:3px;">※ SWTログは個人評価には使用しません。業務改善目的のみで利用します</div></div>
+        <div class="scenario-steps">
+          <div class="sstep">
+            <div class="sstep-num">1</div>
+            <div class="sstep-content">
+              <strong>受注登録画面を開くとSmart Walk-Thruが自動起動</strong>（WalkMe Segmentation Rulesで新人セグメントを検知）。各フィールドに「?」ボタンが出現
+              <div class="sstep-tags"><span class="stag stag-wm">Smart Walk-Thru 自動起動</span><span class="stag stag-wm">WalkMe新人セグメント検知</span></div>
+            </div>
+          </div>
+          <div class="sstep">
+            <div class="sstep-num">2</div>
+            <div class="sstep-content">
+              <strong>「支払条件とは？」をAction Barに入力 or ボタンクリック</strong> → Jouleが「月末締め翌月末払いとは…」と平易に説明。この取引先に設定されている条件も併せて回答
+              <div class="sstep-tags"><span class="stag stag-jo">Joule 業務用語説明</span><span class="stag stag-wm">FAQ クイックアクション</span></div>
+            </div>
+          </div>
+          <div class="sstep">
+            <div class="sstep-num">3</div>
+            <div class="sstep-content">
+              <strong>WalkMe Input Validationが保存前の入力チェックを補助。全必須項目（得意先コード・希望納入日・明細1行以上）をリアルタイムで確認し、不完全伝票（Incomplete Document）の発生を事前に予防</strong>。差し戻しの原因だった必須項目漏れ・入力ミスがゼロに。先輩に確認しなくても一人で完走できる設計
+              <div class="sstep-tags"><span class="stag stag-wm">保存前チェック補助</span><span class="stag stag-jo">Joule 最終確認</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DEMO -->
+<div class="sec-divider"></div>
+<div class="demo-section" id="demo">
+  <div class="demo-inner">
+    <div class="sec-eyebrow">Interactive Mockup</div>
+    <div class="sec-title">モックアップ — 画面動作イメージ</div>
+    <p class="sec-body" style="margin-bottom:24px;">ボタンを押してシナリオを体験してください。右下に WalkMe AI Action Bar が表示されます。</p>
+
+    <div class="demo-tabs">
+      <div class="demo-tab active" onclick="switchDemo('d1')">田中さん（営業）</div>
+      <div class="demo-tab" onclick="switchDemo('d2')">鈴木さん（与信管理）</div>
+      <div class="demo-tab" onclick="switchDemo('d3')">中村さん（新入社員）</div>
+    </div>
+
+    <!-- DEMO 1: Tanaka — Won前に与信確認 → SAP複数明細入力 -->
+    <div class="demo-panel active" id="d1">
+      <div style="font-size:11px;color:var(--muted2);margin-bottom:8px;padding:5px 10px;background:rgba(255,255,255,0.03);border-radius:4px;border-left:2px solid var(--wm-green);">
+        シナリオ：Negotiation段階でJouleが与信超過を検知 → BPA承認申請（申請文自動生成）→ SF復帰 → Closed Won → SAP遷移 → Opportunity ID Autofill → 複数明細入力 → 保存完了
+      </div>
+      <div class="step-ind" id="si1">
+        <div class="si active" id="si1-0">SF Negotiation</div>
+        <div class="si" id="si1-1">Joule照会</div>
+        <div class="si" id="si1-2">BPA申請</div>
+        <div class="si" id="si1-3">SF復帰・Won</div>
+        <div class="si" id="si1-4">SAP遷移・Autofill</div>
+        <div class="si" id="si1-5">複数明細入力</div>
+        <div class="si" id="si1-6">保存完了</div>
+      </div>
+      <div class="prog"><div class="prog-fill" id="pf1" style="width:2%"></div></div>
+      <div class="browser">
+        <div class="browser-bar">
+          <div class="bdots">
+            <div class="bdot" style="background:#FF5F57"></div>
+            <div class="bdot" style="background:#FEBC2E"></div>
+            <div class="bdot" style="background:#28C840"></div>
+          </div>
+          <div class="burl" id="url1">salesforce.com — Salesforce Sales Cloud（タブ1・WalkMe検知の起点）</div>
+        </div>
+        <div class="bcontent" id="bc1" style="min-height:400px;padding-bottom:56px;">
+          <div class="demo-load" id="dl1"><div class="demo-load-spin"></div><div class="demo-load-txt" id="dl1t">読み込み中...</div></div>
+          <!-- SF screen: Negotiation stage -->
+          <div id="screen-sf" class="sf-shell" style="height:400px;">
+            <!-- Salesforce Lightning Design System準拠グローバルナビ -->
+            <div style="background:#032D60;height:44px;display:flex;align-items:stretch;padding:0;">
+              <div style="display:flex;align-items:center;padding:0 12px;gap:8px;">
+                <div style="width:22px;height:22px;background:#00A1E0;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:white;">☁</div>
+                <span style="font-size:13px;font-weight:700;color:rgba(255,255,255,.95);">Sales Cloud</span>
+              </div>
+              <div style="display:flex;align-items:stretch;margin-left:4px;">
+                <div style="display:flex;align-items:center;padding:0 12px;font-size:12px;color:rgba(255,255,255,.7);">ホーム</div>
+                <div style="display:flex;align-items:center;padding:0 12px;font-size:12px;color:white;border-bottom:2px solid white;font-weight:600;">商談</div>
+                <div style="display:flex;align-items:center;padding:0 12px;font-size:12px;color:rgba(255,255,255,.7);">取引先</div>
+                <div style="display:flex;align-items:center;padding:0 12px;font-size:12px;color:rgba(255,255,255,.7);">リード</div>
+                <div style="display:flex;align-items:center;padding:0 12px;font-size:12px;color:rgba(255,255,255,.7);">ダッシュボード</div>
+              </div>
+              <div style="margin-left:auto;display:flex;align-items:center;padding:0 12px;gap:6px;">
+                <div style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;color:rgba(255,255,255,.8);">🔍</div>
+                <div style="width:28px;height:28px;border-radius:50%;background:#0070D2;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;">田</div>
+              </div>
+            </div>
+            <!-- 商談ステージ（Salesforce Pathコンポーネント準拠） -->
+            <div style="background:white;border-bottom:1px solid #DDDBDA;display:flex;align-items:stretch;height:38px;overflow:hidden;">
+              <div style="display:flex;align-items:center;padding:0 14px;font-size:11px;color:#1589EE;background:#EBF5FB;border-right:8px solid transparent;border-top:19px solid transparent;border-bottom:19px solid transparent;">Qualification ✓</div>
+              <div style="display:flex;align-items:center;padding:0 14px;font-size:11px;color:#1589EE;background:#EBF5FB;border-right:8px solid transparent;border-top:19px solid transparent;border-bottom:19px solid transparent;">Proposal ✓</div>
+              <div id="sf-path-current" style="display:flex;align-items:center;padding:0 16px;font-size:11px;color:white;background:#0070D2;font-weight:700;">Negotiation</div>
+              <div style="display:flex;align-items:center;padding:0 14px;font-size:11px;color:#706E6B;">Closed Won</div>
+            </div>
+            <!-- タブ -->
+            <div style="background:white;border-bottom:1px solid #DDDBDA;display:flex;padding:0 14px;">
+              <div style="padding:9px 14px;font-size:12px;color:#0070D2;border-bottom:2px solid #0070D2;font-weight:600;margin-bottom:-1px;">詳細</div>
+              <div style="padding:9px 14px;font-size:12px;color:#706E6B;cursor:pointer;">活動</div>
+              <div style="padding:9px 14px;font-size:12px;color:#706E6B;cursor:pointer;">チャター</div>
+              <div style="padding:9px 14px;font-size:12px;color:#706E6B;cursor:pointer;">商談商品</div>
+            </div>
+            <!-- レコード詳細 -->
+            <div style="flex:1;padding:10px 14px;background:#F3F2F2;overflow:hidden;">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;">
+                <div>
+                  <div style="font-size:16px;font-weight:700;color:#181818;">鈴木製作所向け部品ABC受注</div>
+                  <div style="font-size:11px;color:#706E6B;margin-top:2px;">商談 • <span id="sf-stage-text" style="color:#0C5460;">Negotiation</span> • 更新日: 2026/04/01</div>
+                </div>
+                <div style="display:flex;gap:6px;">
+                  <button style="background:white;color:#3E3E3C;border:1px solid #DDDBDA;padding:6px 12px;border-radius:4px;font-size:11px;cursor:pointer;">編集</button>
+                  <button id="sf-joule-btn" onclick="d1Next()" style="background:#0070D2;color:white;border:none;padding:6px 14px;border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;">Closed Won に変更</button>
+                </div>
+              </div>
+              <!-- Highlights -->
+              <div style="background:white;border:1px solid #DDDBDA;border-radius:4px;padding:9px 12px;margin-bottom:7px;">
+                <div style="font-size:10px;font-weight:600;color:#706E6B;text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px;">Highlights</div>
+                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+                  <div><div style="font-size:10px;color:#706E6B;font-weight:600;text-transform:uppercase;letter-spacing:.3px;">取引先名</div><div style="font-size:12px;color:#0070D2;padding:3px 0;border-bottom:1px solid #DDDBDA;cursor:pointer;">株式会社鈴木製作所</div></div>
+                  <div><div style="font-size:10px;color:#706E6B;font-weight:600;text-transform:uppercase;letter-spacing:.3px;">金額</div><div style="font-size:12px;color:#181818;padding:3px 0;border-bottom:1px solid #DDDBDA;">¥ 4,200,000</div></div>
+                  <div><div style="font-size:10px;color:#706E6B;font-weight:600;text-transform:uppercase;letter-spacing:.3px;">フェーズ</div><div style="font-size:12px;padding:3px 0;border-bottom:1px solid #DDDBDA;"><span id="sf-stage-badge" style="background:#D1ECF1;color:#0C5460;padding:2px 8px;border-radius:3px;font-size:11px;font-weight:600;">Negotiation</span></div></div>
+                  <div><div style="font-size:10px;color:#706E6B;font-weight:600;text-transform:uppercase;letter-spacing:.3px;">Einstein スコア</div><div style="font-size:12px;color:#0070D2;padding:3px 0;border-bottom:1px solid #DDDBDA;">🔮 92 / 高</div></div>
+                  <div><div style="font-size:10px;color:#706E6B;font-weight:600;text-transform:uppercase;letter-spacing:.3px;">顧客コード</div><div style="font-size:12px;color:#0070D2;padding:3px 0;border-bottom:1px solid #DDDBDA;cursor:pointer;">C-00381</div></div>
+                  <div><div style="font-size:10px;color:#706E6B;font-weight:600;text-transform:uppercase;letter-spacing:.3px;">品目</div><div style="font-size:12px;color:#181818;padding:3px 0;border-bottom:1px solid #DDDBDA;">部品ABC/DEF/GHI（3点）</div></div>
+                  <div><div style="font-size:10px;color:#706E6B;font-weight:600;text-transform:uppercase;letter-spacing:.3px;">希望納期</div><div style="font-size:12px;color:#181818;padding:3px 0;border-bottom:1px solid #DDDBDA;">2026/06/30</div></div>
+                  <div><div style="font-size:10px;color:#706E6B;font-weight:600;text-transform:uppercase;letter-spacing:.3px;">完了予定日</div><div style="font-size:12px;color:#181818;padding:3px 0;border-bottom:1px solid #DDDBDA;">2026/04/15</div></div>
+                </div>
+              </div>
+              <!-- WalkMe Suggestionバナー -->
+              <div style="background:#FFF3CD;border:1px solid #FFEAA7;border-radius:4px;padding:7px 12px;display:flex;align-items:flex-start;gap:8px;font-size:11px;color:#856404;">
+                <span style="font-size:14px;flex-shrink:0;">💡</span>
+                <div><strong>WalkMe AI Action Bar:</strong> Negotiation段階を検知。Closed Wonにする前に与信・在庫をJouleに確認することを推奨します。
+                  <span style="color:#0070D2;cursor:pointer;font-weight:600;margin-left:6px;" onclick="d1Next()">今すぐ確認する →</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SAP受注登録画面（複数明細） -->
+          
+          <!-- ══ SAP BPA 与信承認申請フォーム（モック） ══ -->
+          <div id="screen-bpa" class="sap-shell" style="display:none;height:420px;">
+            <div style="background:#003B73;height:44px;display:flex;align-items:center;padding:0 14px;gap:10px;">
+              <div style="display:flex;align-items:center;gap:7px;">
+                <div style="width:28px;height:20px;background:#3CCF9E;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#003B73;">S</div>
+                <span style="font-size:13px;font-weight:600;color:rgba(255,255,255,.95);">SAP Build Process Automation</span>
+              </div>
+              <span style="font-size:11px;color:rgba(255,255,255,.6);">与信枠超過承認申請</span>
+              <div style="margin-left:auto;display:flex;align-items:center;gap:5px;">
+                <div style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:white;">田</div>
+              </div>
+            </div>
+            <div style="background:white;border-bottom:1px solid #89919A;padding:5px 14px;font-size:11px;color:#0064D9;display:flex;align-items:center;gap:4px;">
+              承認ワークフロー <span style="color:#6A6D70;">›</span> 与信枠超過承認申請フォーム
+              <span id="bpa-autofill-badge" style="margin-left:8px;font-size:10px;background:#FEF3C7;color:#92400E;padding:2px 8px;border-radius:3px;border:1px solid #FCD34D;">⏳ WalkMe Autofill 準備中...</span>
+            </div>
+            <div style="flex:1;padding:12px 16px;background:#F5F6F7;overflow:hidden;">
+              <div style="background:white;border:1px solid #89919A;border-radius:4px;padding:12px 16px;margin-bottom:8px;">
+                <div style="font-size:12px;font-weight:700;color:#1C2D3E;margin-bottom:10px;">与信枠超過承認申請</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+                  <div>
+                    <div style="font-size:10px;color:#6A6D70;font-weight:600;text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px;">申請者</div>
+                    <div id="bpa-f1" style="border:1px solid #89919A;border-radius:3px;padding:5px 8px;font-size:12px;color:#1C2D3E;min-height:22px;transition:all .3s;"></div>
+                  </div>
+                  <div>
+                    <div style="font-size:10px;color:#6A6D70;font-weight:600;text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px;">取引先</div>
+                    <div id="bpa-f2" style="border:1px solid #89919A;border-radius:3px;padding:5px 8px;font-size:12px;color:#1C2D3E;min-height:22px;transition:all .3s;"></div>
+                  </div>
+                  <div>
+                    <div style="font-size:10px;color:#6A6D70;font-weight:600;text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px;">受注金額</div>
+                    <div id="bpa-f3" style="border:1px solid #89919A;border-radius:3px;padding:5px 8px;font-size:12px;color:#1C2D3E;min-height:22px;transition:all .3s;"></div>
+                  </div>
+                  <div>
+                    <div style="font-size:10px;color:#E86C00;font-weight:600;text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px;">与信超過額 ⚠</div>
+                    <div id="bpa-f4" style="border:1px solid #89919A;border-radius:3px;padding:5px 8px;font-size:12px;color:#1C2D3E;min-height:22px;transition:all .3s;"></div>
+                  </div>
+                </div>
+                <div>
+                  <div style="font-size:10px;color:#6A6D70;font-weight:600;text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px;">申請理由（Joule自動生成）</div>
+                  <div id="bpa-f5" style="border:1px solid #89919A;border-radius:3px;padding:8px 10px;font-size:11px;color:#1C2D3E;min-height:50px;line-height:1.7;transition:all .3s;"></div>
+                </div>
+              </div>
+              <div id="bpa-btns" style="display:flex;justify-content:flex-end;gap:8px;visibility:hidden;">
+                <button style="background:white;color:#6A6D70;border:1px solid #89919A;padding:7px 16px;border-radius:3px;font-size:12px;cursor:pointer;">キャンセル</button>
+                <button onclick="d1Next()" style="background:#0064D9;color:white;border:none;padding:7px 20px;border-radius:3px;font-size:12px;font-weight:600;cursor:pointer;">送信して申請する →</button>
+              </div>
+            </div>
+          </div>
+
+<div id="screen-sap" class="sap-shell" style="display:none;height:400px;">
+            <!-- SAP Fiori Horizon Shellbar -->
+            <div style="background:#003B73;height:44px;display:flex;align-items:center;padding:0 14px;gap:10px;">
+              <div style="display:flex;align-items:center;gap:7px;">
+                <div style="width:28px;height:20px;background:#3CCF9E;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#003B73;">S</div>
+                <span style="font-size:13px;font-weight:600;color:rgba(255,255,255,.95);">SAP S/4HANA Cloud</span>
+              </div>
+              <span style="font-size:11px;color:rgba(255,255,255,.6);">受注登録 — VA01</span>
+              <div id="sap-wt-badge" style="display:none;font-size:10px;color:#3CDB5D;background:rgba(60,219,93,.15);border:1px solid rgba(60,219,93,.3);padding:3px 9px;border-radius:3px;align-items:center;gap:5px;">
+                <div style="width:5px;height:5px;border-radius:50%;background:#3CDB5D;animation:pulse 1.5s ease-in-out infinite;"></div>Smart Walk-Thru 起動中
+              </div>
+              <div style="margin-left:auto;display:flex;align-items:center;gap:5px;">
+                <div style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;color:rgba(255,255,255,.8);">🔍</div>
+                <div style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:white;">田</div>
+              </div>
+            </div>
+            <!-- ブレッドクラム -->
+            <div style="background:white;border-bottom:1px solid #89919A;padding:5px 14px;font-size:11px;color:#0064D9;display:flex;align-items:center;gap:4px;">受注管理 <span style="color:#6A6D70;">›</span> 受注登録 <span style="color:#6A6D70;">›</span> <span style="color:#1C2D3E;">新規作成（VA01）</span></div>
+            <div class="sap-content">
+              <div style="background:#EBF5FB;border:1px solid #C0D8F5;border-radius:3px;padding:5px 10px;margin-bottom:6px;font-size:10px;font-weight:700;color:#0064D9;text-transform:uppercase;letter-spacing:.5px;">🔗 Salesforce連携項目（Autofill）</div>
+              <div class="sap-form-grid" style="margin-bottom:8px;grid-template-columns:1fr 1fr;">
+                <div class="sap-field"><div class="sap-label">参照番号（VBKD-IHREZ） <span style="font-size:9px;color:#62A86E;">[SF Opportunity ID Autofill]</span></div><div class="sap-input required" id="sap-f4"></div></div>
+                <div class="sap-field"><div class="sap-label">（参照番号のみ。以降は標準項目）</div><div class="sap-input" id="sap-f5"></div></div>
+              </div>
+              <div style="background:#EBF5FB;border:1px solid #C0D8F5;border-radius:3px;padding:5px 10px;margin-bottom:6px;font-size:10px;font-weight:700;color:#0064D9;text-transform:uppercase;letter-spacing:.5px;">📋 明細（3品目）— Joule + Smart Walk-Thru ハイブリッドガイド</div>
+              <div class="sap-table-wrap">
+                <div class="sap-table-head">
+                  <div class="sap-table-head-cell" style="flex:0.6;">行</div>
+                  <div class="sap-table-head-cell">品目コード</div>
+                  <div class="sap-table-head-cell">品目名</div>
+                  <div class="sap-table-head-cell" style="flex:0.8;">数量</div>
+                  <div class="sap-table-head-cell">単価</div>
+                </div>
+                <div class="sap-table-row" id="sap-row1" style="opacity:.4;">
+                  <div class="sap-table-cell" style="flex:0.6;"><div style="font-size:11px;color:#6B6D70;">1</div></div>
+                  <div class="sap-table-cell"><div class="sap-input" id="sap-l1"></div></div>
+                  <div class="sap-table-cell"><div class="sap-input" id="sap-l2"></div></div>
+                  <div class="sap-table-cell" style="flex:0.8;"><div class="sap-input" id="sap-l3"></div></div>
+                  <div class="sap-table-cell"><div class="sap-input" id="sap-l4"></div></div>
+                </div>
+                <div class="sap-table-row" id="sap-row2" style="opacity:.4;">
+                  <div class="sap-table-cell" style="flex:0.6;"><div style="font-size:11px;color:#6B6D70;">2</div></div>
+                  <div class="sap-table-cell"><div class="sap-input" id="sap-l5"></div></div>
+                  <div class="sap-table-cell"><div class="sap-input" id="sap-l6"></div></div>
+                  <div class="sap-table-cell" style="flex:0.8;"><div class="sap-input" id="sap-l7"></div></div>
+                  <div class="sap-table-cell"><div class="sap-input" id="sap-l8"></div></div>
+                </div>
+                <div class="sap-table-row" id="sap-row3" style="opacity:.4;">
+                  <div class="sap-table-cell" style="flex:0.6;"><div style="font-size:11px;color:#6B6D70;">3</div></div>
+                  <div class="sap-table-cell"><div class="sap-input" id="sap-l9"></div></div>
+                  <div class="sap-table-cell"><div class="sap-input" id="sap-l10"></div></div>
+                  <div class="sap-table-cell" style="flex:0.8;"><div class="sap-input" id="sap-l11"></div></div>
+                  <div class="sap-table-cell"><div class="sap-input" id="sap-l12"></div></div>
+                </div>
+              </div>
+              <!-- Walk-Thru balloon for line items -->
+              <div class="wt-balloon" id="wt-b1" style="top:42px;left:2px;">
+                <div class="wt-title">◉ Smart Walk-Thru</div>
+                <div class="wt-text" id="wt-b1-text">Opportunity IDを参照番号（VBKD-IHREZ）に自動入力しました</div>
+                <div class="wt-step" id="wt-b1-step">Step 1 / 5</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- WalkMe Action Bar（画像準拠：単一横長バー） -->
+          <div class="walkme-ab" id="ab1">
+            <div class="ab-me-logo" onclick="d1Next()">me</div>
+            <div class="ab-icon-btn">✏</div>
+            <div class="ab-center" id="ab1-pills">
+              <div class="ab-pill active-green" onclick="d1Next()">✨ Jouleで与信・在庫を事前確認</div>
+              <div class="ab-pill" style="color:#888;font-size:11px;">💡 Won前の確認を推奨</div>
+            </div>
+            <div class="ab-right">
+              <div class="ab-right-btn">⋯</div>
+              <div class="ab-right-btn">⚙</div>
+              <div class="ab-right-btn">‹</div>
+            </div>
+          </div>
+          <!-- WalkMe AIカードポップアップ（Image1準拠：独立白カード） -->
+          <div class="wm-card-overlay" id="wm-card1">
+            <div class="wm-card-header">
+              <div class="wm-card-me">me</div>
+              <span class="wm-card-title" id="wm-card1-title">Joule — 事前照会</span>
+              <span class="wm-card-ai-warn">AI生成コンテンツ</span>
+              <div class="wm-card-icons">
+                <span class="wm-card-icon" onclick="closeCard('wm-card1')">✕</span>
+              </div>
+            </div>
+            <div class="wm-card-body">
+              <div class="wm-card-tags" id="wm-card1-tags"></div>
+              <div class="wm-card-detail" id="wm-card1-detail">照会中...</div>
+            </div>
+            <div class="wm-card-footer">
+              <button class="wm-copy-btn" id="wm-card1-action" onclick="d1Next()">📋 Copy</button>
+              <div class="wm-refresh-btn">↻</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="demo-controls">
+        <button class="demo-btn primary" id="demo-btn-d1" onclick="d1Next()">▶ 次のステップへ</button>
+        <button class="demo-btn" onclick="d1Reset()">↺ リセット</button>
+      </div>
+      <div class="demo-log" id="log1"></div>
+    </div>
+
+    <!-- DEMO 2: Suzuki — S/4HANA与信例外承認ワークフロー -->
+    <div class="demo-panel" id="d2">
+      <div style="font-size:11px;color:var(--muted2);margin-bottom:8px;padding:5px 10px;background:rgba(255,255,255,0.03);border-radius:4px;border-left:2px solid var(--wm-lblue);">
+        シナリオ：S/4HANAの与信例外承認ワークフロー依頼画面 → Jouleが根拠を要約 → Action Barから承認実行
+      </div>
+      <div class="step-ind">
+        <div class="si active" id="si2-0">承認依頼受信</div>
+        <div class="si" id="si2-1">Joule根拠表示</div>
+        <div class="si" id="si2-2">承認完了・通知</div>
+      </div>
+      <div class="prog"><div class="prog-fill" id="pf2" style="width:5%"></div></div>
+      <div class="browser">
+        <div class="browser-bar">
+          <div class="bdots">
+            <div class="bdot" style="background:#FF5F57"></div>
+            <div class="bdot" style="background:#FEBC2E"></div>
+            <div class="bdot" style="background:#28C840"></div>
+          </div>
+          <div class="burl" id="url2">s4hana.cloud.sap — SAP S/4HANA Cloud — 与信管理 例外承認ワークフロー（UKM）</div>
+        </div>
+        <div class="bcontent" style="min-height:420px;position:relative;padding-bottom:52px;">
+          <div class="demo-load" id="dl2"><div class="demo-load-spin"></div><div class="demo-load-txt" id="dl2t">読み込み中...</div></div>
+          <!-- S/4HANA 与信例外承認ワークフロー画面 -->
+          <div class="sap-shell" style="height:360px;">
+            <!-- SAP Fiori Horizon Shellbar - UKM -->
+            <div style="background:#003B73;height:44px;display:flex;align-items:center;padding:0 14px;gap:10px;">
+              <div style="display:flex;align-items:center;gap:7px;">
+                <div style="width:28px;height:20px;background:#3CCF9E;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#003B73;">S</div>
+                <span style="font-size:13px;font-weight:600;color:rgba(255,255,255,.95);">SAP S/4HANA Cloud</span>
+              </div>
+              <span style="font-size:11px;color:rgba(255,255,255,.6);">与信管理</span>
+              <div style="margin-left:auto;display:flex;align-items:center;gap:5px;">
+                <div style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;color:rgba(255,255,255,.8);">🔔</div>
+                <div style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:white;">鈴</div>
+              </div>
+            </div>
+            <div style="background:white;border-bottom:1px solid #89919A;padding:5px 14px;font-size:11px;color:#0064D9;display:flex;align-items:center;gap:4px;">与信管理 <span style="color:#6A6D70;">›</span> 例外承認ワークフロー <span style="color:#6A6D70;">›</span> <span style="color:#1C2D3E;">マイ受信ボックス</span></div>
+            <div class="sap-content" style="padding:10px 12px;background:#F5F6F7;overflow:hidden;">
+              <!-- ワークフロー受信ボックス風 -->
+              <div style="font-size:10px;font-weight:700;color:#6B6D70;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">承認依頼 — マイ受信ボックス</div>
+              <!-- 依頼カード1 -->
+              <div id="wf-card1" style="background:white;border:1px solid #BABBBD;border-radius:3px;padding:8px 10px;margin-bottom:6px;border-left:3px solid #E86C00;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+                  <div style="font-size:12px;font-weight:700;color:#1C1C1C;">与信枠超過承認依頼</div>
+                  <div style="font-size:10px;font-weight:600;background:#FDEBD0;color:#E86C00;padding:2px 7px;border-radius:3px;">要承認</div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;font-size:10px;color:#6B6D70;margin-bottom:6px;">
+                  <div><span style="display:block;font-weight:600;">依頼者</span>田中 太郎（営業部）</div>
+                  <div><span style="display:block;font-weight:600;">受注番号</span>（登録前 — 仮）</div>
+                  <div><span style="display:block;font-weight:600;">依頼日時</span>2026/04/01 09:22</div>
+                  <div><span style="display:block;font-weight:600;">取引先</span>株式会社鈴木製作所</div>
+                  <div><span style="display:block;font-weight:600;">受注金額</span>¥4,200,000</div>
+                  <div><span style="display:block;font-weight:600;">与信超過額</span><span style="color:#E86C00;font-weight:600;">¥1,000,000</span></div>
+                </div>
+                <div style="font-size:10px;color:#6B6D70;background:#F5F6F7;padding:4px 6px;border-radius:2px;">
+                  与信限度額: ¥3,200,000 　現在使用額: ¥3,200,000 　今回受注: ¥4,200,000 → <strong style="color:#E86C00;">超過¥1,000,000</strong>
+                </div>
+                <div style="display:flex;gap:5px;margin-top:6px;" id="wf-btns1">
+                  <button style="background:#0064D9;color:white;border:none;padding:4px 12px;border-radius:3px;font-size:11px;font-weight:600;cursor:pointer;" onclick="d2Next()">承認</button>
+                  <button style="background:white;color:#E86C00;border:1px solid #E86C00;padding:4px 12px;border-radius:3px;font-size:11px;font-weight:600;cursor:pointer;">却下</button>
+                  <button style="background:white;color:#6B6D70;border:1px solid #BABBBD;padding:4px 12px;border-radius:3px;font-size:11px;cursor:pointer;" onclick="d2Next()">詳細を確認</button>
+                </div>
+              </div>
+              <!-- 依頼カード2 -->
+              <div style="background:white;border:1px solid #BABBBD;border-radius:3px;padding:8px 10px;border-left:3px solid #BABBBD;opacity:.6;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;">
+                  <div style="font-size:12px;font-weight:700;color:#6B6D70;">与信枠超過承認依頼</div>
+                  <div style="font-size:10px;color:#6B6D70;padding:2px 7px;">確認中</div>
+                </div>
+                <div style="font-size:10px;color:#9E9E9E;">東京商事 — 佐藤 花子（営業部）— ¥800,000超過</div>
+              </div>
+            </div>
+          </div>
+          <!-- WalkMe Action Bar（画像準拠：単一横長バー） -->
+          <div class="walkme-ab show" id="ab2">
+            <div class="ab-me-logo">me</div>
+            <div class="ab-icon-btn">✏</div>
+            <div class="ab-center" id="ab2-pills">
+              <div class="ab-pill" style="background:#FFF3E0;border-color:#E86C00;color:#C25400;" onclick="d2Next()">⚠ 鈴木製作所 超過¥1.0M</div>
+              <div class="ab-pill active-blue" onclick="d2Next()">✨ 承認根拠を確認</div>
+              <div class="ab-pill" style="color:#888;">📋 東京商事 確認中</div>
+            </div>
+            <div class="ab-right">
+              <div class="ab-right-btn">⋯</div>
+              <div class="ab-right-btn">⚙</div>
+              <div class="ab-right-btn">‹</div>
+            </div>
+          </div>
+          <!-- WalkMe AIカードポップアップ -->
+          <div class="wm-card-overlay" id="wm-card2">
+            <div class="wm-card-header">
+              <div class="wm-card-me">me</div>
+              <span class="wm-card-title">Joule — 承認判断材料</span>
+              <span class="wm-card-ai-warn">AI生成コンテンツ</span>
+              <div class="wm-card-icons">
+                <span class="wm-card-icon">✕</span>
+              </div>
+            </div>
+            <div class="wm-card-body">
+              <div class="wm-card-detail" id="wm-card2-detail">照会中...</div>
+            </div>
+            <div class="wm-card-footer">
+              <button class="wm-copy-btn" id="wm-card2-action" onclick="d2Next()">✓ 承認する</button>
+              <div class="wm-refresh-btn">↻</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="demo-controls">
+        <button class="demo-btn primary" onclick="d2Next()">▶ 次のステップへ</button>
+        <button class="demo-btn" onclick="d2Reset()">↺ リセット</button>
+      </div>
+      <div class="demo-log" id="log2"></div>
+    </div>
+
+    <!-- DEMO 3: Nakamura — Smart Walk-Thru + SmartTips強化版 -->
+    <div class="demo-panel" id="d3">
+      <div style="font-size:11px;color:var(--muted2);margin-bottom:8px;padding:5px 10px;background:rgba(255,255,255,0.03);border-radius:4px;border-left:2px solid var(--wm-green);">
+        シナリオ：AI Action Bar が初心者をプロアクティブにガイド → SmartTips AI の「?」でフィールド意味を即確認 → Jouleへ深掘り → バリデーションで差し戻しゼロ
+      </div>
+      <div class="step-ind">
+        <div class="si active" id="si3-0">SWT起動</div>
+        <div class="si" id="si3-1">得意先コード</div>
+        <div class="si" id="si3-2">支払条件SmartTip</div>
+        <div class="si" id="si3-3">Joule深掘り</div>
+        <div class="si" id="si3-4">希望納期・明細</div>
+        <div class="si" id="si3-5">バリデーション完了</div>
+      </div>
+      <div class="prog"><div class="prog-fill" id="pf3" style="width:5%"></div></div>
+      <div class="browser">
+        <div class="browser-bar">
+          <div class="bdots">
+            <div class="bdot" style="background:#FF5F57"></div>
+            <div class="bdot" style="background:#FEBC2E"></div>
+            <div class="bdot" style="background:#28C840"></div>
+          </div>
+          <div class="burl">work.sap.com — SAP S/4HANA 受注登録（新人ガイドモード）</div>
+        </div>
+        <div class="bcontent" style="min-height:420px;position:relative;">
+          <div class="demo-load" id="dl3"><div class="demo-load-spin"></div><div class="demo-load-txt" id="dl3t">読み込み中...</div></div>
+          <!-- SAP画面本体 -->
+          <div class="sap-shell" style="height:420px;">
+            <div class="sap-topbar">
+              <div class="sap-logo"><div class="sap-logo-box">S</div>SAP S/4HANA Cloud</div>
+              <span class="sap-screen-title">受注登録</span>
+              <div class="sap-wt-badge" id="sap-wt3-badge">
+                <div class="sap-wt-dot"></div>Smart Walk-Thru — Step <span id="nakamura-step">1</span>/6
+              </div>
+            </div>
+            <div class="sap-content" style="padding:10px 14px 8px;overflow:hidden;">
+              <div class="sap-section-title">ヘッダー情報</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+
+                <!-- 得意先コード（新SmartTipアイコン） -->
+                <div class="sap-field" style="position:relative;">
+                  <div id="nc1-wrap" style="position:relative;padding-top:0;">
+                  <div id="wt-bal1" class="wt-balloon-top"><div class="wt-balloon-top-title">◉ Smart Walk-Thru <span class="wt-step-badge">Step 1/6</span></div>得意先コードを入力します。C-00381は株式会社鈴木製作所です。</div>
+                  <div class="sap-label" id="nc1-label" style="transition:color .2s;">得意先コード *</div>
+                  <div style="position:relative;">
+                    <div class="sap-input required" id="nc1" style="border-left:3px solid #0064D9;"></div>
+                    <div class="wm-smarttip-icon" id="st-icon1" onclick="showST(1)">?</div>
+                    <div class="wm-smarttip-pop" id="stpop1">
+                      <div class="st-pop-title">💡 SmartTip</div>
+                      <div class="st-pop-body">取引先マスタに登録されたIDです。Salesforceの「顧客コード」と一対一対応しています。</div>
+                      <div class="st-pop-link" onclick="d3AskJoule(1)">→ AIにもっと詳しく聞く ✨</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 支払条件（新SmartTipアイコン） -->
+                <div class="sap-field" style="position:relative;">
+                  <div id="nc2-wrap" style="position:relative;padding-top:0;">
+                  <div id="wt-bal2" class="wt-balloon-top"><div class="wt-balloon-top-title">◉ Smart Walk-Thru <span class="wt-step-badge">Step 2/6</span></div>支払条件は取引先マスタから自動表示。意味が分からない場合は「?」をクリック。</div>
+                  <div class="sap-label" id="nc2-label" style="transition:color .2s;">支払条件</div>
+                  <div style="position:relative;">
+                    <div class="sap-input" id="nc2"></div>
+                    <div class="wm-smarttip-icon" id="st-icon2" onclick="showST(2)">?</div>
+                    <div class="wm-smarttip-pop" id="stpop2">
+                      <div class="st-pop-title">💡 SmartTip</div>
+                      <div class="st-pop-body">月末締め翌月末払いとなる支払条件を取引先マスタに設定します。<strong>（ZB01はデモ用サンプルキー。実際のコードは顧客環境の設定に従います）</strong></div>
+                      <div class="st-pop-link" onclick="d3AskJoule(2)">→ AIにもっと詳しく聞く ✨</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 参照番号フィールド -->
+                <div class="sap-field" style="position:relative;">
+                  <div class="sap-label">参照番号（VBKD-IHREZ）</div>
+                  <div style="position:relative;">
+                    <div class="sap-input required" id="nc3" style="border-left:3px solid #0064D9;"></div>
+                    <div class="wm-smarttip-icon" id="st-icon3" onclick="showST(3)">?</div>
+                    <div class="wm-smarttip-pop" id="stpop3">
+                      <div class="st-pop-title">💡 SmartTip</div>
+                      <div class="st-pop-body">SAP受注に対してSalesforceの案件番号を参照番号として紐付けます。<strong>VBKD-IHREZ</strong>はSAP標準フィールドのため追加カスタム不要。WalkMeが自動で入力します。</div>
+                      <div class="st-pop-link" onclick="d3AskJoule(3)">→ AIにもっと詳しく聞く ✨</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 希望納期 -->
+                <div class="sap-field">
+                  <div class="sap-label">希望納期 *</div>
+                  <div class="sap-input required" id="nc4"></div>
+                </div>
+              </div>
+
+              <!-- Walk-Thru進捗バー -->
+              <div id="wt-hint-box" style="background:#F0FFF4;border:1.5px solid #3CDB5D;border-radius:5px;padding:7px 10px;font-size:11px;color:#1A7D35;display:flex;align-items:flex-start;gap:7px;margin-bottom:6px;">
+                <div style="width:14px;height:14px;border-radius:50%;background:#3CDB5D;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;font-size:8px;color:white;font-weight:900;">W</div>
+                <div>
+                  <div id="wt-hint" style="font-weight:600;font-size:11px;">Smart Walk-Thru が起動しました。各フィールド右下の <strong style="color:#3CDB5D;">?</strong> アイコンで意味を確認できます。</div>
+                  <div id="wt-sub" style="font-size:10px;color:#888;margin-top:2px;">分からない用語はその場で確認 → AIに深掘りが可能です</div>
+                </div>
+              </div>
+              <div id="wt-error-box" style="display:none;background:#FFF3F0;border:1.5px solid #E86C00;border-radius:5px;padding:6px 10px;font-size:11px;color:#C25400;align-items:center;gap:6px;">
+                <span>⚠</span><span id="wt-error-text">必須項目が未入力です。</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI Suggestion パネル（画像右下の白カード） -->
+          <div class="wm-ai-tip" id="wm-ai-tip">
+            <div class="wm-ai-tip-head">
+              <div style="width:14px;height:14px;border-radius:3px;background:linear-gradient(135deg,#3CDB5D,#4A9FE0);display:flex;align-items:center;justify-content:center;font-size:8px;color:white;font-weight:900;">W</div>
+              AI Suggestion
+            </div>
+            <div class="wm-ai-tip-body" id="wm-ai-tip-body">こんにちは！私はリアルタイムで提案を行うAIアシスタントです。フィールドの <strong>?</strong> アイコンをクリックすると説明が表示されます。</div>
+          </div>
+
+          <!-- WalkMe AIカードポップアップ（Image1準拠：独立白カード） -->
+          <div class="wm-card-overlay" id="wm-card3">
+            <div class="wm-card-header">
+              <div class="wm-card-me">me</div>
+              <span class="wm-card-title" id="wm-card3-title">Smart Walk-Thru — 入力ガイド</span>
+              <span class="wm-card-ai-warn">AI生成コンテンツ</span>
+              <div class="wm-card-icons">
+                <span class="wm-card-icon" onclick="closeCard('wm-card3')">✕</span>
+              </div>
+            </div>
+            <div class="wm-card-body">
+              <div class="wm-card-tags" id="wm-card3-tags"></div>
+              <div class="wm-card-detail" id="wm-card3-detail">説明を表示中...</div>
+            </div>
+            <div class="wm-card-footer">
+              <button class="wm-copy-btn" id="wm-card3-action" onclick="d3Next()">📋 Copy</button>
+              <div class="wm-refresh-btn">↻</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- WalkMe AI Action Bar（ブラウザの下・デモコントロールの上に配置） -->
+      <div class="walkme-ab show" id="ab3" style="position:relative;transform:none;margin-top:0;border-radius:0 0 8px 8px;">
+        <div class="ab-me-logo" onclick="d3Next()">me</div>
+        <div class="ab-icon-btn">⚙</div>
+        <div class="ab-icon-btn">☐</div>
+        <div class="ab-center" id="ab3-pills">
+          <div class="ab-pill active-blue" onclick="d3Next()">▶ Smart Walk-Thru を開始</div>
+          <div class="ab-pill active-purple" onclick="d3AskJoule(2)">Tools ✨</div>
+        </div>
+        <div class="ab-right">
+          <div class="ab-right-btn">⋯</div>
+          <div class="ab-right-btn">⚙</div>
+          <div class="ab-right-btn">‹</div>
+        </div>
+      </div>
+      <div class="demo-controls">
+        <button class="demo-btn primary" onclick="d3Next()">▶ 次のステップへ</button>
+        <button class="demo-btn" onclick="d3Reset()">↺ リセット</button>
+      </div>
+      <div class="demo-log" id="log3"></div>
+    </div>
+  </div>
+</div>
+
+<!-- CONCERNS -->
+<div class="sec-divider"></div>
+<section id="concerns">
+  <div class="sec-eyebrow">Risks & Mitigations</div>
+  <div class="sec-title">想定される懸念点と対応策</div>
+  <p class="sec-body">4AI（ChatGPT・Gemini・SAP Joule for Consultants・Copilot）によるレビューで洗い出した懸念点。</p>
+
+  <div class="concern-list">
+    <div class="concern-card" onclick="toggleConcern(this)">
+      <div class="concern-head">
+        <span class="risk-tag risk-high">技術 / 高</span>
+        <span class="concern-title">WalkMe AI Action BarのAPIは2026年5月GA時点で仕様の詳細確認が必要</span>
+        <span class="concern-arr">▾</span>
+      </div>
+      <div class="concern-detail">
+        <div class="concern-issue">提供開始直後のため、Action BarからJouleを呼び出す公式APIの詳細仕様が事前に確認できない。実装開始後に仕様変更が起きるリスクがある。（ChatGPT・Gemini指摘）</div>
+        <div class="concern-resolve"><strong>対応策：</strong> Phase 0でIAS/IPS・WalkMeテナントの基盤整備を完了。提供開始後の最初の2週間をGo/No-Go判定に充て、仕様確認してから本実装へ。SAP担当者1名がリリースノートを毎週モニタリング。WalkMeが両タブ（Salesforce / S/4HANA Fiori）に常駐することを事前確認。</div>
+      </div>
+    </div>
+    <div class="concern-card" onclick="toggleConcern(this)">
+      <div class="concern-head">
+        <span class="risk-tag risk-high">技術 / 高</span>
+        <span class="concern-title">Fiori四半期アップデートでWalkMeのセレクタが壊れるリスク</span>
+        <span class="concern-arr">▾</span>
+      </div>
+      <div class="concern-detail">
+        <div class="concern-issue">SAP Fioriは四半期アップデートでDOM構造が変わることがある。行番号依存のセレクタを使うと毎回修正が必要になる。（ChatGPT指摘）</div>
+        <div class="concern-resolve"><strong>対応策：</strong> <strong>stable anchorベース設計</strong>を採用：①data-sap-ui属性 / aria-label優先、②nth-child系行番号固定指定は禁止（DOM再描画で壊れる）、③「追加直後のフォーカス行」「末尾行」を追跡するアプローチを採用。「stable IDで万全」は言い過ぎで、安定アンカーを取れる箇所を取り、取れない箇所は相対認識で逃がす設計が現実的。Cloud ALMと連動した四半期回帰テストを実施。</div>
+      </div>
+    </div>
+    <div class="concern-card" onclick="toggleConcern(this)">
+      <div class="concern-head">
+        <span class="risk-tag risk-med">業務 / 中</span>
+        <span class="concern-title">AIの回答を信頼して受注することへの担当者抵抗</span>
+        <span class="concern-arr">▾</span>
+      </div>
+      <div class="concern-detail">
+        <div class="concern-issue">熟練営業ほど「慣れたやり方の方が速い」「AIが間違えたら誰の責任か」という抵抗が生まれやすい。（Copilot指摘）</div>
+        <div class="concern-resolve"><strong>対応策：</strong> JouleはAI参考情報として根拠（参照時刻・伝票ID）を必須表示し、最終判断は担当者が行う設計を徹底。与信ブロック・保存はSAP標準ワークフローが担保。Action BarのSnooze機能で担当者に主導権を残す。まず在庫確認・納期計算など低リスク業務から導入。</div>
+      </div>
+    </div>
+    <div class="concern-card" onclick="toggleConcern(this)">
+      <div class="concern-head">
+        <span class="risk-tag risk-med">業務 / 中</span>
+        <span class="concern-title">Jouleのネイティブコンテキスト引き継ぎAPIは未公開</span>
+        <span class="concern-arr">▾</span>
+      </div>
+      <div class="concern-detail">
+        <div class="concern-issue">Jouleは現状、会話履歴を外部APIへ出力する公式手段が未公開。Joule UIはiframe内で動作しており、親ウィンドウからのコンテキスト取得は制約がある。「Joule→Smart Walk-Thruへの会話コンテキスト継承」をネイティブAPIで実現するのは現時点では困難。（技術AI評価・Gemini指摘）</div>
+        <div class="concern-resolve"><strong>対応策（AI出力継承方式・3段階フェールバック）：</strong> 「会話の継承」ではなく「AI出力の継承」として設計する。実装は3段階: ①最小リスク: Joule出力をDOM上から取得しWalkMe Dataに保存 ②中リスク: Joule応答を定型フォーマット（JSON/Key-Value）で返すスキルに寄せパースを安定化 ③低リスク（前提あり）: client bridge APIでスレッド/応答を取得（GA直後は「at risk」領域）。いずれの方式でもフェールバックを必須とし、AIなしでもSWT/SmartTips中心で成立する導線を常に残す。</div>
+      </div>
+    </div>
+    <div class="concern-card" onclick="toggleConcern(this)">
+      <div class="concern-head">
+        <span class="risk-tag risk-high">技術 / 高</span>
+        <span class="concern-title">WalkMeロード前にJouleアイコンをクリックすると別webclientが開く</span>
+        <span class="concern-arr">▾</span>
+      </div>
+      <div class="concern-detail">
+        <div class="concern-issue">WalkMeがロードされる前にユーザーがJouleアイコンをクリックすると、WalkMe管理外の別webclientでJouleが開いてしまう。AI Action Barが「入口」として機能しなくなるリスク。（Joule-WalkMe Steering資料指摘）</div>
+        <div class="concern-resolve"><strong>対応策：</strong> ①WalkMeのロード完了までJouleアイコンの表示/クリックを制御 ②ロード順序をPhase 0で検証し、WalkMe常駐が確認できてから本実装へ ③万が一別webclientが開いた場合のユーザー向けガイド（「Action Barからご利用ください」）を用意</div>
+      </div>
+    </div>
+    <div class="concern-card" onclick="toggleConcern(this)">
+      <div class="concern-head">
+        <span class="risk-tag risk-med">運用 / 中</span>
+        <span class="concern-title">WalkMe AI機能のOpt-in/Opt-out運用とAI Units消費</span>
+        <span class="concern-arr">▾</span>
+      </div>
+      <div class="concern-detail">
+        <div class="concern-issue">WalkMe FY26 AI Commercializationにより、AI機能はOpt-in/Opt-out運用。Joule統合時にAI Units消費が発生し、本番で急にAIが無効化される/有効化が遅れるリスクがある。（WalkMe FY26商用条件指摘）</div>
+        <div class="concern-resolve"><strong>対応策：</strong> ①AIなしでも成立する導線（SWT/SmartTips中心）を常に残す設計 ②AI Units消費量を事前に見積もり、予算承認を取得 ③Opt-in手続きのタイムラインをWalkMeベンダーと事前確認</div>
+      </div>
+    </div>
+    <div class="concern-card" onclick="toggleConcern(this)">
+      <div class="concern-head">
+        <span class="risk-tag risk-med">SAP / 中</span>
+        <span class="concern-title">UKMの公開APIはSOAPが中心。OData可用性は要確認</span>
+        <span class="concern-arr">▾</span>
+      </div>
+      <div class="concern-detail">
+        <div class="concern-issue">SAP Credit ManagementのAPIは主にSOAPサービス（Credit Management Account Read、DCD Create/Update等）で提供。ODataとしての汎用読み取りエンドポイントは公開情報では確認できていない。（SAP Joule for Consultants評価）</div>
+        <div class="concern-resolve"><strong>対応策：</strong> BTP側でSOAPクライアントまたは中間サービスとして消費し、他API（ATP等）と集約する設計。クレジット統合用Communication Scenario（SAP_COM_0793/0826/0092）の活用を検討。Phase 0でAPI可用性を確認しGo/No-Go判定に含める。</div>
+      </div>
+    </div>
+    <div class="concern-card" onclick="toggleConcern(this)">
+      <div class="concern-head">
+        <span class="risk-tag risk-med">変革管理 / 中</span>
+        <span class="concern-title">管理職（課長・部長）の巻き込みとKPI設計</span>
+        <span class="concern-arr">▾</span>
+      </div>
+      <div class="concern-detail">
+        <div class="concern-issue">現場担当者向けの設計は成熟しているが、管理職が気にする「説明責任」「監査耐性」「属人性リスク」への訴求が不足している。管理職の支持がなければ現場導入が進まない。（変革管理AI評価指摘）</div>
+        <div class="concern-resolve"><strong>対応策：</strong> ①管理職用ダッシュボードを設計（差し戻し理由Top3・例外案件の傾向・与信判断リードタイム） ②訴求メッセージは「部下を守る材料が増える」（監査耐性・説明責任の強化） ③KPIを4レイヤーで整理: 業務（差し戻し率・リードタイム）/ 品質（例外案件比率）/ 人（新人独り立ち期間）/ 組織（電話削減→付加価値業務転換時間）</div>
+      </div>
+    </div>
+    <div class="concern-card" onclick="toggleConcern(this)">
+      <div class="concern-head">
+        <span class="risk-tag risk-low">SAP制約 / 低</span>
+        <span class="concern-title">IAS/IPSの信頼ドメイン設定不備で認証ループが発生</span>
+        <span class="concern-arr">▾</span>
+      </div>
+      <div class="concern-detail">
+        <div class="concern-issue">IAS・WalkMeの信頼ドメイン設定に抜け漏れがあると、Joule起動時に認証ループや空白画面が発生する。特にSalesforceとS/4HANAのクロスシステム遷移時に発生しやすい。（SAP Joule for Consultants指摘）</div>
+        <div class="concern-resolve"><strong>対応策：</strong> IAS Trust → BTP Trusted Domain → IAS Trusted Domain → CSP → Salesforce Trusted Domain の<strong>全5レイヤーを順番に設定</strong>。SAML/OIDC混在禁止（同一IASテナント上で混在不可）。SAML Tracerで認証フローを必ず検証。Phase 0のWeek 1でGo/No-Go判定し、IAS設定不備はNGとして本実装に入らない。追加注意: ①ブラウザのポップアップ抑止（ユーザー操作なしのwindow.open制限）への対応 ②SameSite Cookie/サードパーティCookie規制によるSSO不安定化 ③連続遷移時のセッション維持検証</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TEAM -->
+<div class="sec-divider"></div>
+<section id="team">
+  <div class="sec-eyebrow">Team</div>
+  <div class="sec-title">チーム構成</div>
+  <p class="sec-body">デモ環境構築・お客様向けプリセールスデモ実施のために必要な最小チーム構成。</p>
+
+  <div class="team-grid">
+    <div class="team-card">
+      <div class="team-role-badge">WalkMe 実装</div>
+      <div class="team-title">デモ環境エンジニア</div>
+      <div class="team-count">1名</div>
+      <div class="team-unit">WalkMe Builder / WalkMe AI Action Bar / Smart Walk-Thru / Autofill</div>
+      <div class="team-tasks">
+        <div class="team-task">WalkMe AI Action Bar（入口）+ launcher/SWT/SmartTip/Validation 実装</div>
+        <div class="team-task">Smart Walk-Thru・Autofill実装</div>
+        <div class="team-task">Segmentation Rules（RBAC別）・stable anchorセレクタ設計</div>
+        <div class="team-task">data-sap-ui / aria-labelベース セレクタ設計・四半期回帰テスト</div>
+      </div>
+    </div>
+    <div class="team-card">
+      <div class="team-role-badge">SAP BTP / Joule</div>
+      <div class="team-title">SAPテクニカルコンサル</div>
+      <div class="team-count">1名</div>
+      <div class="team-unit">IAS/IPS / BTP / Joule設定</div>
+      <div class="team-tasks">
+        <div class="team-task">IAS/IPS基盤整備（Salesforce + S/4HANAのSSO統合）（最優先）</div>
+        <div class="team-task">Joule launcher・custom capability設計（Joule Studio）</div>
+        <div class="team-task">BTP集約API構築（UKM SOAP+ATP+MM並列・劣化設計・部分応答・キャッシュ込み・2秒目標）</div>
+        <div class="team-task">BPA承認ワークフロー設定（SAP_COM_0793/0826/0092活用・DCD連携）</div>
+      </div>
+    </div>
+    <div class="team-card">
+      <div class="team-role-badge">プリセールス</div>
+      <div class="team-title">ソリューションコンサル</div>
+      <div class="team-count">1名</div>
+      <div class="team-unit">デモシナリオ設計・営業支援</div>
+      <div class="team-tasks">
+        <div class="team-task">業務シナリオ詳細設計（3ペルソナ）</div>
+        <div class="team-task">お客様向けデモ実施・訴求資料作成</div>
+        <div class="team-task">ROI試算・提案書作成</div>
+        <div class="team-task">懸念点Q&A整備</div>
+      </div>
+    </div>
+    <div class="team-card">
+      <div class="team-role-badge">プロジェクト管理</div>
+      <div class="team-title">PMO（兼務可）</div>
+      <div class="team-count">0.5名</div>
+      <div class="team-unit">スケジュール管理・社内調整</div>
+      <div class="team-tasks">
+        <div class="team-task">Go/No-Go判定の主催</div>
+        <div class="team-task">SAP・WalkMeベンダー窓口</div>
+        <div class="team-task">承認取得・進捗管理</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec-eyebrow" style="margin-top:2rem;">ライセンス準備</div>
+  <div class="license-grid">
+    <div class="lic-card"><div class="lic-title">SAP S/4HANA Cloud PoC環境</div><div class="lic-detail">Public Edition PoC テナント準備。Jouleライセンス有効化確認を含む</div></div>
+    <div class="lic-card"><div class="lic-title">WalkMeテナント</div><div class="lic-detail">WalkMe AI Action Bar対応版テナント準備。デモ環境専用の設定域を確保</div></div>
+    <div class="lic-card"><div class="lic-title">SAP BTP環境</div><div class="lic-detail">BTP集約API・BPA承認ワークフロー用。IAS/IPS設定・Joule Studioを含む</div></div>
+    <div class="lic-card"><div class="lic-title">Salesforce 開発環境</div><div class="lic-detail">Developer組織またはSandbox。既存契約確認後に準備方法を確定</div></div>
+  </div>
+
+  <div class="sec-eyebrow" style="margin-top:2rem;">システム構成</div>
+  <div class="arch-box">
+    <div class="arch-title">確定アーキテクチャ — Work Zone不使用・WalkMe Redirectによるタブ間自動遷移</div>
+    <div class="arch-body">
+      <div class="arch-layer" style="background:rgba(60,219,93,0.04);">
+        <div class="arch-lbl">担当者</div>
+        <div class="arch-nodes">
+          <div class="arch-node" style="background:rgba(60,219,93,0.1);color:var(--wm-green);border-color:rgba(60,219,93,0.25);">田中（営業）</div>
+          <div class="arch-node" style="background:rgba(60,219,93,0.1);color:var(--wm-green);border-color:rgba(60,219,93,0.25);">鈴木（与信管理）</div>
+          <div class="arch-node" style="background:rgba(60,219,93,0.1);color:var(--wm-green);border-color:rgba(60,219,93,0.25);">中村（新入社員）</div>
+        </div>
+      </div>
+      <div class="arch-arrow">↕ すべての画面に重なって常駐（RBAC別表示）</div>
+      <div class="arch-layer" style="background:rgba(13,27,62,0.5);border:1px solid rgba(60,219,93,0.15);border-radius:6px;">
+        <div class="arch-lbl">WalkMe AI Action Bar</div>
+        <div class="arch-nodes">
+          <div class="arch-node" style="background:rgba(60,219,93,0.12);color:var(--wm-green);border-color:rgba(60,219,93,0.3);font-weight:600;">Joule launcher（AIの起動口）</div>
+          <div class="arch-node" style="background:rgba(60,219,93,0.08);color:rgba(150,240,170,.8);border-color:rgba(60,219,93,0.2);">Smart Walk-Thru</div>
+          <div class="arch-node" style="background:rgba(60,219,93,0.08);color:rgba(150,240,170,.8);border-color:rgba(60,219,93,0.2);">Autofill（SF Opportunity ID → SAP参照番号）</div>
+          <div class="arch-node" style="background:rgba(60,219,93,0.08);color:rgba(150,240,170,.8);border-color:rgba(60,219,93,0.2);">Redirect（Salesforce → BPAフォーム → S/4HANA Fiori）</div>
+          <div class="arch-node" style="background:rgba(60,219,93,0.08);color:rgba(150,240,170,.8);border-color:rgba(60,219,93,0.2);">Segmentation Rules（RBAC）</div>
+        </div>
+      </div>
+      <div class="arch-arrow">↕ IAS/IPS 同一テナント認証</div>
+      <div class="arch-layer" style="background:rgba(61,47,160,0.1);">
+        <div class="arch-lbl">SAP BTP</div>
+        <div class="arch-nodes">
+          <div class="arch-node" style="background:rgba(61,47,160,0.15);color:#8B7FE8;border-color:rgba(139,127,232,0.25);">集約API（UKM+MM+ATP並列処理）</div>
+          <div class="arch-node" style="background:rgba(61,47,160,0.15);color:#8B7FE8;border-color:rgba(139,127,232,0.25);">BPA承認フォーム（Joule申請文をAutofillで自動入力）</div>
+          <div class="arch-node" style="background:rgba(61,47,160,0.15);color:#8B7FE8;border-color:rgba(139,127,232,0.25);">Build Process Automation</div>
+          <div class="arch-node" style="background:rgba(61,47,160,0.15);color:#8B7FE8;border-color:rgba(139,127,232,0.25);">Cloud Identity Services</div>
+        </div>
+      </div>
+      <div class="arch-arrow">↕ WalkMe Redirect（タブ間自動遷移）/ OData released APIs（Clean Core）</div>
+      <div class="arch-layer" style="background:rgba(31,86,174,0.08);">
+        <div class="arch-lbl">アプリ</div>
+        <div class="arch-nodes">
+          <div class="arch-node" style="background:rgba(0,112,210,0.12);color:#7BBFF7;border-color:rgba(123,191,247,0.2);">Salesforce Sales Cloud（タブ1・WalkMe起点）</div>
+          <div class="arch-node" style="background:rgba(31,86,174,0.12);color:var(--wm-lblue);border-color:rgba(74,159,224,0.25);">SAP S/4HANA Cloud Fiori（タブ2）</div>
+          <div class="arch-node" style="background:rgba(61,47,160,0.12);color:#9B8FED;border-color:rgba(139,127,232,0.2);">SAP BPA承認フォーム（タブ2 or 3）</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="background:rgba(60,219,93,.06);border:1px solid rgba(60,219,93,.15);border-radius:8px;padding:16px 20px;margin-bottom:20px;">
+    <div style="font-size:11px;font-weight:700;color:var(--wm-green);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">推奨導入ロードマップ（AI変革管理評価反映）</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;font-size:12px;color:var(--muted2);">
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(60,219,93,.2);border-radius:6px;padding:10px 12px;">
+        <div style="font-size:10px;font-weight:700;color:var(--wm-green);margin-bottom:4px;">Phase 1 — 鈴木さん（与信管理）</div>
+        <div style="margin-bottom:4px;color:#fff;font-weight:500;">最短ROI・最小システム統合</div>
+        フェーズD（与信例外承認）のみ。対象ユーザーが限定的でSalesforce統合が不要。効果が「承認リードタイム・電話対応削減」として即測定可能。
+      </div>
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(74,159,224,.2);border-radius:6px;padding:10px 12px;">
+        <div style="font-size:10px;font-weight:700;color:var(--wm-lblue);margin-bottom:4px;">Phase 2 — 田中さん（Negotiation事前照会）</div>
+        <div style="margin-bottom:4px;color:#fff;font-weight:500;">Phase 1基盤を活用して拡張</div>
+        フェーズA（与信/在庫/納期の事前リスク可視化）。BTP集約APIがPhase 1で完成済みのため拡張コストが低い。KPI：与信超過の事前発見率。
+      </div>
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(139,127,232,.2);border-radius:6px;padding:10px 12px;">
+        <div style="font-size:10px;font-weight:700;color:#9B8FED;margin-bottom:4px;">Phase 3 — 田中さん受注登録 + 中村さん</div>
+        <div style="margin-bottom:4px;color:#fff;font-weight:500;">最もスコープが広い。Phase 2完了後に着手</div>
+        フェーズB/C（受注登録完走）+ フェーズE（新人支援）。Salesforce独立タブ起点・複数明細・新人ガイドを含む。KPI：受注登録時間・差し戻し率・新人独り立ち期間。
+      </div>
+    </div>
+  </div>
+  <div class="verdict v-ok">
+    <strong>2週間 Go/No-Go チェックポイント：</strong> Week 1 — WalkMe AI Action Bar利用可能確認・IAS/IPS全5レイヤー設定（SAML Tracer検証必須）・WalkMeテナント有効化・WalkMe Redirectによるタブ間遷移（Salesforce→BPAフォーム→S/4HANA Fiori）動作確認。Week 2 — BTP集約API（1本化）・BPA承認フォームAutofill・Joule launcher連携確認・stable anchorセレクタ検証。<strong>Week 1の「WalkMe AI Action Bar利用可能確認」または「IAS/IPS全5レイヤー設定」がNGの場合は本実装に入らない。</strong>
+  </div>
+</section>
+
+<div class="footer">
+  WalkMe AI Action Bar × SAP — デモ環境構築 チーム編成承認依頼資料 · 2026年4月（WalkMe AI Action Bar GA: 2026年5月予定）版 · Confidential
+</div>
+
+<script>
+// ── NAVIGATION ──
+function goTo(id){const el=document.getElementById(id);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});}
+window.addEventListener('scroll',()=>{
+  const ids=['hero','summary','scenario','demo','concerns','team'];
+  const items=document.querySelectorAll('.nav-item');
+  const y=window.scrollY+80;let active=0;
+  ids.forEach((id,i)=>{const el=document.getElementById(id)||document.querySelector('.demo-section');if(!el)return;if(y>=el.offsetTop)active=i;});
+  items.forEach((it,i)=>it.classList.toggle('active',i===active));
+});
+function toggleScenario(n){document.getElementById('sc-card-'+n).classList.toggle('open');}
+function toggleConcern(el){el.classList.toggle('open');}
+function switchDemo(id){
+  ['d1','d2','d3'].forEach((n,i)=>{document.querySelectorAll('.demo-tab')[i].classList.toggle('active',n===id);});
+  document.querySelectorAll('.demo-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ── HELPERS ──
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const $=id=>document.getElementById(id);
+function addLog(lid,txt,cls){
+  const el=$(lid);if(!el)return;
+  const d=document.createElement('div');d.className=cls||'';
+  const n=new Date();
+  d.textContent=`[${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}] ${txt}`;
+  el.appendChild(d);el.scrollTop=el.scrollHeight;
+}
+async function typeIn(id,val,speed=22){
+  const el=$(id);if(!el)return;
+  el.textContent='';el.classList.add('filled');
+  for(const ch of val){el.textContent+=ch;await sleep(speed);}
+  setTimeout(()=>el.classList.remove('filled'),1000);
+}
+function setProg(id,pct){const e=$(id);if(e)e.style.width=pct+'%';}
+function siDone(id){const e=$(id);if(e){e.classList.remove('active');e.classList.add('done');}}
+function siActive(id){const e=$(id);if(e)e.classList.add('active');}
+function showAB(id){const e=$(id);if(e)e.classList.add('show');}
+
+// カードポップアップ表示（Image1準拠）
+function showCard(cardId,titleId,title,tagsHtml,detailHtml,btnLabel,btnFn){
+  const card=$(cardId);if(!card)return;
+  if(titleId){const t=$(titleId);if(t)t.textContent=title||'';}
+  const tags=card.querySelector('[id$="-tags"]');if(tags)tags.innerHTML=tagsHtml||'';
+  const detail=card.querySelector('[id$="-detail"]');if(detail)detail.innerHTML=detailHtml||'';
+  const btn=card.querySelector('[id$="-action"]');
+  if(btn&&btnLabel)btn.textContent=btnLabel;
+  if(btn&&btnFn)btn.onclick=btnFn;
+  card.classList.add('show');
+}
+function closeCard(id){const e=$(id);if(e)e.classList.remove('show');}
+function closeAllCards(){['wm-card1','wm-card2','wm-card3'].forEach(id=>closeCard(id));}
+
+// ピルボタン更新
+function setPills(id,html){const e=$(id);if(e)e.innerHTML=html;}
+
+// ローディングオーバーレイ表示（2秒）
+async function showLoad(panelId,txt){
+  const ld=$(panelId);if(!ld)return;
+  const lt=ld.querySelector('.demo-load-txt');if(lt)lt.textContent=txt||'読み込み中...';
+  ld.classList.add('show');
+  await sleep(2000);
+  ld.classList.remove('show');
+}
+
+// タグヘルパー（Jouleカード用）
+function tag(text,ok,warn){
+  if(ok) return '<div class="wm-tag selected"><div class="wm-tag-check">✓</div>'+text+'</div>';
+  if(warn) return '<div class="wm-tag warn"><div class="wm-tag-check">!</div>'+text+'</div>';
+  return '<div class="wm-tag"><div class="wm-tag-check">—</div>'+text+'</div>';
+}
+
+// ── DEMO 1: TANAKA ──
+let d1Phase=0;
+async function d1Next(){
+  d1Phase++;
+  if(d1Phase===1)      await d1p1();        // Joule事前照会
+  else if(d1Phase===2) await d1p2_bpa();    // BPAフォーム表示
+  else if(d1Phase===3) await d1p3_won();    // BPA送信→SF復帰→ClosedWonボタン
+  else if(d1Phase===4) await d1p4_sap();    // ClosedWon処理+S/4遷移
+  else if(d1Phase===5) await d1p5_auto();   // Autofill（参照番号）
+  else if(d1Phase===6) await d1p6_lines();  // 明細入力完走
+}
+
+// Phase1: Joule事前照会
+async function d1p1(){
+  siDone('si1-0');siActive('si1-1');setProg('pf1',16);
+  const jbtn=$('sf-joule-btn');if(jbtn){jbtn.disabled=true;jbtn.style.opacity='.5';}
+  addLog('log1','WalkMe: Salesforce Negotiation段階を検知 → AI Action Bar起動','log-wm');
+  showAB('ab1');
+  setPills('ab1-pills','<div class="ab-pill" style="color:#888;"><span>⏳</span> Joule 照会中...</div>');
+  await showLoad('dl1','Joule 照会中...');
+  showCard('wm-card1','wm-card1-title','Joule — 事前照会（参考値）',
+    tag('在庫確認済み',true)+tag('与信超過',false,true)+tag('納期算出済み',true),
+    `<strong>事前リスク照会結果</strong>（2026/04/01 09:10）<br>
+<strong>与信（UKM）：</strong>残高¥3.2M → 見積¥4.2M = <span class="warn-val">超過¥1,000,000</span><br>
+<strong>約束可能日（ATP）：</strong>部品ABC 最短6/15 ✓ / 部品DEF 最短6/20 ✓ / 部品GHI 最短6/25 ✓<br>
+<strong>参考在庫（MM）：</strong>ABC 500個 / DEF 200個 / GHI 150個<br>
+<strong>推奨：</strong>Wonにする前に与信枠拡大を申請してください<br>
+<span class="cite">※参考値（事前リスク可視化）。確定の与信チェック・納期確認は受注登録時にSAP標準で実行</span><br>
+<span class="cite">参照: BTP集約API（UKM+ATP+MM）· 2026/04/01 09:10</span>`,
+    '与信枠拡大を申請する →', d1Next
+  );
+  setPills('ab1-pills','<div class="ab-pill active-green" onclick="d1Next()">▶ 与信超過¥1M — 承認申請する</div>');
+  addLog('log1','Joule: 与信超過¥1,000,000を検出（参考値）— 承認申請を推奨','log-warn');
+  // カード表示中は「次のステップへ」ボタンを無効化してカード内のボタンを押させる
+  const demoBtn1=$('demo-btn-d1');if(demoBtn1){demoBtn1.disabled=true;demoBtn1.style.opacity='.4';demoBtn1.title='Jouleカード内の「与信枠拡大を申請する」ボタンを押してください';}
+}
+
+// Phase2: BPAフォームへRedirect → Autofillアニメーション
+async function d1p2_bpa(){
+  siDone('si1-1');siActive('si1-2');setProg('pf1',30);
+  // 「次のステップへ」ボタンを無効化（BPA側の「送信」ボタンで進む）
+  const demoBtn1=$('demo-btn-d1');if(demoBtn1){demoBtn1.disabled=true;demoBtn1.style.opacity='.4';demoBtn1.title='BPAフォームの「送信して申請する」ボタンを押してください';}
+  closeAllCards();
+  addLog('log1','WalkMe: Redirect → SAP BPA承認フォームへ自動遷移','log-wm');
+  setPills('ab1-pills','<div class="ab-pill" style="color:#888;"><span>⏳</span> BPA承認フォームへ遷移中...</div>');
+  await showLoad('dl1','WalkMe Redirect → BPA承認フォームへ遷移中...');
+  $('url1').textContent='[tenant].sap.com — SAP Build Process Automation — 与信枠超過承認申請';
+  $('screen-sf').style.display='none';
+  // BPAフォームを空の状態で表示
+  const bpaEl=$('screen-bpa');if(bpaEl)bpaEl.style.display='flex';
+  // フィールドを空に初期化
+  ['bpa-f1','bpa-f2','bpa-f3','bpa-f4','bpa-f5'].forEach(id=>{
+    const el=$(id);if(el){el.textContent='';el.style.background='';el.style.borderLeft='';el.style.color='#1C2D3E';el.style.fontWeight='';}
+  });
+  const btns=$('bpa-btns');if(btns)btns.style.visibility='hidden';
+  const badge=$('bpa-autofill-badge');if(badge){badge.textContent='⏳ WalkMe Autofill 準備中...';badge.style.background='#FEF3C7';badge.style.color='#92400E';badge.style.borderColor='#FCD34D';}
+  setPills('ab1-pills','<div class="ab-pill" style="color:#888;"><span>⏳</span> Autofill 実行中...</div>');
+  addLog('log1','WalkMe: BPAフォームを開きました — Autofill開始','log-wm');
+  await sleep(600);
+
+  // Autofillアニメーション: 1フィールドずつ入力
+  async function fillBpaField(id, value, isWarn){
+    const el=$(id);if(!el)return;
+    el.textContent='';
+    el.style.background='#FFFBEB';el.style.borderLeft='3px solid #F59E0B';
+    await sleep(200);
+    // タイピングアニメーション
+    for(const ch of value){el.textContent+=ch;await sleep(18);}
+    await sleep(150);
+    if(isWarn){
+      el.style.background='#FFF6F0';el.style.borderLeft='3px solid #E86C00';el.style.color='#8B3A00';el.style.fontWeight='600';
+    }else{
+      el.style.background='#F0FFF4';el.style.borderLeft='3px solid #3CDB5D';
+    }
+  }
+
+  addLog('log1','Autofill: 申請者 → 田中 太郎（営業部）','log-wm');
+  await fillBpaField('bpa-f1','田中 太郎（営業部）');
+  addLog('log1','Autofill: 取引先 → 株式会社鈴木製作所（C-00381）','log-wm');
+  await fillBpaField('bpa-f2','株式会社鈴木製作所（C-00381）');
+  addLog('log1','Autofill: 受注金額 → ¥4,200,000','log-wm');
+  await fillBpaField('bpa-f3','¥4,200,000');
+  addLog('log1','Autofill: 与信超過額 → ¥1,000,000（限度額¥3.2M超過）','log-warn');
+  await fillBpaField('bpa-f4','¥1,000,000（限度額¥3.2M超過）',true);
+  addLog('log1','Autofill: 申請理由 → Joule自動生成文を入力','log-jo');
+  await fillBpaField('bpa-f5','株式会社鈴木製作所（C-00381）は過去12ヶ月の回収実績100%、取引年数5年、累計受注¥38Mの優良取引先です。今回の受注は与信限度額¥3,200,000を¥1,000,000超過しています。回収リスクは低く、与信枠の一時拡大を申請します。');
+
+  // Autofill完了 → バッジ更新 → 送信ボタン表示
+  if(badge){badge.textContent='✦ WalkMe Autofill 完了 — 全項目自動入力済み';badge.style.background='#DCFCE7';badge.style.color='#15803D';badge.style.borderColor='#86EFAC';}
+  if(btns)btns.style.visibility='visible';
+  addLog('log1','Autofill完了: 全5項目を自動入力。内容を確認して「送信」してください','log-ok');
+  setPills('ab1-pills','<div class="ab-pill active-green" onclick="d1Next()">✓ 内容を確認して送信 →</div>');
+  showCard('wm-card1','wm-card1-title','Autofill完了 — 送信してください',
+    tag('申請文 自動生成済み',true)+tag('超過額・取引先 入力済み',true),
+    '✓ <strong>全5項目をAutofillで自動入力しました</strong><br>申請者・取引先・金額・超過額・Joule生成の申請理由<br><span class="cite">内容を確認して、BPAフォームの「送信して申請する」ボタンを押してください</span>',
+    null, null
+  );
+}
+
+// Phase3: BPA送信→Salesforce復帰→ClosedWonボタン提示
+async function d1p3_won(){
+  siDone('si1-2');siActive('si1-3');setProg('pf1',44);
+  // 「次のステップへ」ボタンを再有効化
+  const demoBtn1=$('demo-btn-d1');if(demoBtn1){demoBtn1.disabled=false;demoBtn1.style.opacity='1';demoBtn1.title='';}
+  closeAllCards();
+  await showLoad('dl1','BPA送信完了 → Salesforceへ自動復帰中...');
+  const bpaEl=$('screen-bpa');if(bpaEl)bpaEl.style.display='none';
+  $('screen-sf').style.display='flex';
+  $('url1').textContent='salesforce.com — Salesforce Sales Cloud（タブ1）';
+  addLog('log1','WalkMe: BPA送信完了 → Salesforceへ自動復帰','log-ok');
+  addLog('log1','Action Bar: 申請完了・鈴木さんへ通知済み','log-wm');
+  await sleep(300);
+  setPills('ab1-pills','<div class="ab-pill active-green" onclick="d1Next()">▶ Closed Won に変更して受注登録へ</div><div class="ab-pill" style="color:#888;font-size:11px;">✓ 申請完了</div>');
+  showCard('wm-card1','wm-card1-title','申請完了 — 次のステップへ',
+    tag('承認申請 送付済み',true)+tag('鈴木さんへ通知済み',true),
+    '✓ 与信枠超過の承認申請を送付しました。<br>引き続き<strong>Closed Wonにして受注登録</strong>を進めてください。<br><span class="cite">与信ブロックは受注登録後にSAP標準で自動設定されます</span>',
+    '▶ Closed Wonにする', d1Next
+  );
+}
+
+// Phase4: Closed Won処理 → 「受注登録を開始」ボタン表示
+async function d1p4_sap(){
+  siDone('si1-3');siActive('si1-4');setProg('pf1',58);
+  closeAllCards();
+  // Closed Won処理（Salesforce画面上でステージ変更を表現）
+  const badge=$('sf-stage-badge');if(badge){badge.textContent='Closed Won ✓';badge.style.background='#D1FAE5';badge.style.color='#065F46';}
+  const stxt=$('sf-stage-text');if(stxt){stxt.textContent='Closed Won ✓';stxt.style.color='#065F46';}
+  const path=$('sf-path-current');if(path){path.classList.remove('current');path.classList.add('done');path.textContent='Negotiation ✓';}
+  addLog('log1','Salesforce: ステージ → Closed Won','log-ok');
+  addLog('log1','WalkMe: Closed Won検知 → Action Barに「受注登録を開始」を表示','log-wm');
+  await showLoad('dl1','Closed Won → SAP S/4HANA受注登録へ遷移中...');
+  // Closed Wonボタンを「受注登録を開始する」に切り替え
+  const wonBtn=$('sf-joule-btn');
+  if(wonBtn){wonBtn.textContent='▶ SAP受注登録を開始する';wonBtn.style.background='#16A34A';wonBtn.onclick=d1Next;wonBtn.disabled=false;wonBtn.style.opacity='1';}
+  // Action Barに「受注登録を開始する」ボタンを表示
+  setPills('ab1-pills','<div class="ab-pill active-green" onclick="d1Next()">▶ SAP S/4HANA 受注登録を開始する</div><div class="ab-pill" style="color:#888;font-size:11px;">✓ 申請完了・Closed Won</div>');
+  showCard('wm-card1','wm-card1-title','Closed Won 完了 — 受注登録へ',
+    tag('Closed Won 完了',true)+tag('承認申請 送付済み',true),
+    '商談がClosed Wonになりました。<br><strong>WalkMeが自動でSAP S/4HANA受注登録画面へ案内します。</strong><br>準備ができたら「受注登録を開始する」を押してください。<br><span class="cite">与信ブロックは受注登録後にSAP標準で自動設定されます</span>',
+    '▶ SAP受注登録を開始する', d1Next
+  );
+}
+
+
+// Phase5: S/4HANA遷移 + Autofill（参照番号）
+async function d1p5_auto(){
+  siDone('si1-4');siActive('si1-5');setProg('pf1',70);
+  closeAllCards();
+  // S/4HANA遷移
+  addLog('log1','WalkMe: Redirect → S/4HANA Fiori受注登録へ自動遷移','log-wm');
+  $('url1').textContent='s4hana.ondemand.com — SAP S/4HANA Cloud Fiori — 受注登録（タブ2）';
+  await showLoad('dl1','WalkMe Redirect → SAP S/4HANA Fiori 受注登録へ遷移中...');
+  $('screen-sf').style.display='none';
+  $('screen-sap').style.display='flex';
+  $('sap-wt-badge').style.display='flex';
+  ['sap-row1','sap-row2','sap-row3'].forEach(id=>{const e=$(id);if(e)e.style.opacity='1';});
+  await sleep(300);
+  // Autofill
+  addLog('log1','WalkMe: Salesforce Opportunity ID（OPP-2026-0412）を読み取り','log-wm');
+  await typeIn('sap-f4','OPP-2026-0412',20);
+  await sleep(200);
+  addLog('log1','WalkMe Autofill: Opportunity ID → 参照番号（VBKD-IHREZ）に自動入力','log-wm');
+  $('wt-b1').classList.add('show');
+  $('wt-b1-text').textContent='Opportunity IDを参照番号（VBKD-IHREZ）に自動入力しました。次は3品目の明細を入力します。';
+  $('wt-b1-step').textContent='Step 2 / 5';
+  addLog('log1','Autofill完了: 参照番号（SAP標準フィールド・カスタム項目不要）','log-ok');
+  showCard('wm-card1','wm-card1-title','Autofill — 完了',
+    tag('参照番号 自動入力済み',true)+tag('SAP標準フィールド',true),
+    'Salesforce Opportunity IDをSAP参照番号（VBKD-IHREZ）に自動入力しました。<br>次は<strong>3品目の明細</strong>を入力します。<br>1〜2行目: Jouleが在庫確認しながらガイド<br>3行目: Smart Walk-Thruが引き継ぎます',
+    '▶ 明細入力へ', d1Next
+  );
+  setPills('ab1-pills','<div class="ab-pill active-green" onclick="d1Next()">▶ 明細入力へ</div><div class="ab-pill active-blue">✓ 参照番号 自動入力済み</div>');
+}
+
+// Phase6: 明細入力完走 + 保存
+async function d1p6_lines(){
+  siDone('si1-5');siActive('si1-6');
+  closeAllCards();setProg('pf1',86);
+  $('wt-b1-text').textContent='明細を順番に入力中...';
+  $('wt-b1-step').textContent='Step 3-5 / 5';
+  // 明細1行目: Joule
+  addLog('log1','Joule: 明細1行目 — 部品ABC ATP確認（最短6/15）','log-jo');
+  $('sap-row1').style.background='rgba(60,219,93,0.06)';
+  await typeIn('sap-l1','PARTS-ABC-001',16);await sleep(60);
+  await typeIn('sap-l2','部品ABC',16);await sleep(60);
+  await typeIn('sap-l3','100個',22);await sleep(60);
+  await typeIn('sap-l4','¥20,000',18);await sleep(180);
+  $('sap-row1').style.background='';
+  // 明細2行目: Joule
+  addLog('log1','Joule: 明細2行目 — 部品DEF ATP確認（最短6/20）','log-jo');
+  $('sap-row2').style.background='rgba(60,219,93,0.06)';
+  await typeIn('sap-l5','PARTS-DEF-002',16);await sleep(60);
+  await typeIn('sap-l6','部品DEF',16);await sleep(60);
+  await typeIn('sap-l7','50個',22);await sleep(60);
+  await typeIn('sap-l8','¥30,000',18);await sleep(180);
+  $('sap-row2').style.background='';
+  // 明細3行目: Smart Walk-Thru
+  addLog('log1','Smart Walk-Thru: 明細3行目 — Step by Step ガイド','log-wm');
+  $('sap-row3').style.background='rgba(74,159,224,0.06)';
+  $('wt-b1-text').textContent='3行目（最終）: Smart Walk-Thruガイド中。部品GHIを入力してください。';
+  await typeIn('sap-l9','PARTS-GHI-003',16);await sleep(60);
+  await typeIn('sap-l10','部品GHI',16);await sleep(60);
+  await typeIn('sap-l11','30個',22);await sleep(60);
+  await typeIn('sap-l12','¥40,000',18);await sleep(180);
+  $('sap-row3').style.background='';
+  siDone('si1-6');setProg('pf1',100);
+  $('wt-b1-text').textContent='3品目の明細入力完了。合計 ¥4,200,000 — 確認して保存してください。';
+  $('wt-b1-step').textContent='Step 5 / 5 ✓';
+  addLog('log1','全3明細 入力完了（Joule×Smart Walk-Thruハイブリッド）','log-ok');
+  showCard('wm-card1','wm-card1-title','受注サマリ',
+    tag('3品目 入力完了',true)+tag('参照番号 設定済み',true)+tag('与信承認: 申請中',false,true),
+    '✓ <strong>3品目の明細入力完了</strong><br>部品ABC×100 / 部品DEF×50 / 部品GHI×30<br>合計 ¥4,200,000（税額はSAP標準ロジックで確定）<br>参照番号: OPP-2026-0412（VBKD-IHREZ）<br><span class="cite">与信ブロック: SAP標準で自動設定 / DCD経由で承認・解除</span>',
+    '📋 内容をコピー', null
+  );
+  // 保存ボタンを表示（SAP画面上）
+  const saveArea=$('sap-save-area');if(saveArea)saveArea.style.display='flex';
+  setPills('ab1-pills','<div class="ab-pill active-green" onclick="d1SaveOrder()">💾 受注登録を保存する</div><div class="ab-pill" style="color:#888;font-size:11px;">⏳ 与信承認: 申請中</div>');
+  d1Phase=99;
+}
+
+// 受注保存完了
+function d1SaveOrder(){
+  siDone('si1-6');setProg('pf1',100);
+  closeAllCards();
+  addLog('log1','SAP: 受注番号 0000012345 発番','log-ok');
+  addLog('log1','SAP: 与信ブロック自動設定（UKM標準）— Manage Documented Credit Decisions経由で承認・解除','log-wm');
+  const saveArea=$('sap-save-area');if(saveArea){
+    saveArea.innerHTML='<div style="display:flex;align-items:center;gap:8px;padding:6px 14px;background:#DCFCE7;border:1px solid #86EFAC;border-radius:4px;font-size:12px;color:#15803D;font-weight:600;">✓ 受注番号 0000012345 発番 — 与信ブロック設定済み（承認待ち）</div>';
+  }
+  showCard('wm-card1','wm-card1-title','受注登録完了',
+    tag('受注番号 発番済み',true)+tag('与信ブロック設定済み',false,true)+tag('承認申請 送付済み',true),
+    '✓ <strong>受注登録完了。受注番号 0000012345</strong><br>合計 ¥4,200,000 / 参照番号: OPP-2026-0412<br><span style="color:#E86C00;">与信ブロック: SAP標準で自動設定（出荷は承認後）</span><br><span class="cite">鈴木さんの承認後、Manage Documented Credit Decisions経由でブロック解除されます</span>',
+    '✓ 完了', null
+  );
+  setPills('ab1-pills','<div class="ab-pill active-green">✓ 受注登録完了 — 0000012345</div><div class="ab-pill" style="color:#E86C00;font-size:11px;">⏳ 与信承認待ち</div>');
+  addLog('log1','完了: 受注登録0000012345 発番。与信承認後に出荷処理へ進みます。','log-ok');
+}
+
+function d1Reset(){
+  d1Phase=0;
+  ['si1-0','si1-1','si1-2','si1-3','si1-4','si1-5','si1-6'].forEach((id,i)=>{
+    const e=$(id);if(!e)return;
+    e.classList.remove('done','active');
+    if(i===0)e.classList.add('active');
+  });
+  setProg('pf1',2);
+  // Salesforceステージをリセット
+  const badge=$('sf-stage-badge');if(badge){badge.textContent='Negotiation';badge.style.background='#D1ECF1';badge.style.color='#0C5460';}
+  const stxt=$('sf-stage-text');if(stxt){stxt.textContent='Negotiation';stxt.style.color='#0C5460';}
+  const sfpath=$('sf-path-current');if(sfpath){sfpath.classList.remove('done');sfpath.classList.add('current');sfpath.textContent='Negotiation';}
+  const jbtn=$('sf-joule-btn');if(jbtn){jbtn.disabled=false;jbtn.style.opacity='1';jbtn.textContent='Closed Won に変更';jbtn.style.background='#0070D2';jbtn.onclick=d1Next;}
+  // 「次のステップへ」ボタンを再有効化
+  const demoBtn1=$('demo-btn-d1');if(demoBtn1){demoBtn1.disabled=false;demoBtn1.style.opacity='1';demoBtn1.title='';}
+  // 画面切替
+  $('screen-sf').style.display='flex';
+  $('screen-sap').style.display='none';
+  const bpa=$('screen-bpa');if(bpa)bpa.style.display='none';
+  // BPAフィールドリセット
+  ['bpa-f1','bpa-f2','bpa-f3','bpa-f4','bpa-f5'].forEach(id=>{
+    const el=$(id);if(el){el.textContent='';el.style.background='';el.style.borderLeft='';el.style.color='#1C2D3E';el.style.fontWeight='';}
+  });
+  const bpaBtns=$('bpa-btns');if(bpaBtns)bpaBtns.style.visibility='hidden';
+  const bpaBadge=$('bpa-autofill-badge');if(bpaBadge){bpaBadge.textContent='⏳ WalkMe Autofill 準備中...';bpaBadge.style.background='#FEF3C7';bpaBadge.style.color='#92400E';bpaBadge.style.borderColor='#FCD34D';}
+  $('sap-wt-badge').style.display='none';
+  // SAPフィールドリセット
+  ['sap-f4','sap-f5','sap-l1','sap-l2','sap-l3','sap-l4',
+   'sap-l5','sap-l6','sap-l7','sap-l8','sap-l9','sap-l10','sap-l11','sap-l12'].forEach(id=>{
+    const e=$(id);if(e){e.textContent='';e.className='sap-input';
+      if(id==='sap-f4')e.classList.add('required');}
+  });
+  ['sap-row1','sap-row2','sap-row3'].forEach(id=>{
+    const e=$(id);if(e){e.style.opacity='.4';e.style.background='';}
+  });
+  const wt=$('wt-b1');if(wt)wt.classList.remove('show');
+  const saveArea=$('sap-save-area');if(saveArea){saveArea.style.display='none';saveArea.innerHTML='<button onclick="d1SaveOrder()" style="background:#0064D9;color:white;border:none;padding:8px 20px;border-radius:4px;font-size:12px;font-weight:600;cursor:pointer;margin-right:8px;">💾 保存（受注登録）</button><button style="background:white;color:#6A6D70;border:1px solid #89919A;padding:8px 16px;border-radius:4px;font-size:12px;cursor:pointer;">キャンセル</button>';}
+  $('url1').textContent='salesforce.com — Salesforce Sales Cloud（タブ1・WalkMe検知の起点）';
+  closeAllCards();showAB('ab1');
+  setPills('ab1-pills','<div class="ab-pill active-green" onclick="d1Next()">✨ Jouleで与信・在庫リスクを事前確認</div><div class="ab-pill" style="color:#888;font-size:11px;">💡 Negotiation段階の参考値</div>');
+  $('log1').innerHTML='';
+}
+
+// ── DEMO 2: SUZUKI ──
+let d2Phase=0;
+async function d2Next(){
+  d2Phase++;
+  if(d2Phase===1){
+    siDone('si2-0');siActive('si2-1');setProg('pf2',45);
+    addLog('log2','WalkMe: 与信例外承認依頼画面を検知 → Jouleで根拠を照会','log-wm');
+    setPills('ab2-pills','<div class="ab-pill" style="color:#888;"><span>⏳</span> Joule 照会中...</div>');
+    await showLoad('dl2','Joule: UKM+FI-AR 横断照会中...');
+    showCard('wm-card2',null,'',
+      `<div class="wm-tag selected"><div class="wm-tag-check">✓</div>回収実績 100%</div><div class="wm-tag selected"><div class="wm-tag-check">✓</div>信用スコア A</div><div class="wm-tag"><div class="wm-tag-check">!</div>超過 ¥1,000,000</div><div class="wm-tag selected"><div class="wm-tag-check">✓</div>推奨：承認</div>`,
+      '<strong>超過額：</strong> ¥1,000,000（限度額¥3.2M → 受注¥4.2M）<br><strong>回収実績：</strong> 過去12ヶ月 100%（延滞なし）<br><strong>取引年数：</strong> 5年 / 累計受注 ¥38M<br><strong>信用スコア：</strong> A（内部格付け）<span style="font-size:9px;color:#94A3B8;"> ※UKM設定・外部機関連携がある場合のみ参照</span><br><strong>推奨：<span style="color:#16A34A;font-weight:700;">承認</span></strong> — 低リスク<br><span style="font-size:10px;color:#94A3B8;">参照: UKM C-00381 · FI-AR回収実績 · 2026/04/01 09:22</span><br><span style="font-size:9px;color:#94A3B8;">※FI-AR DBTの直接参照API可用性は要確認。高度な支払行動指標には追加ライセンスが必要な場合あり</span>',
+      '✓ 承認する', d2Next
+    );
+    setPills('ab2-pills','<div class="ab-pill active-blue" onclick="d2Next()">✨ Joule回答を確認</div><div class="ab-pill" style="color:#888;font-size:11px;">📋 東京商事 確認中</div>');
+    addLog('log2','Joule: 承認判断材料を自動生成（根拠・推奨付き）','log-jo');
+  }else if(d2Phase===2){
+    siDone('si2-1');siActive('si2-2');setProg('pf2',85);
+    closeAllCards();
+    await showLoad('dl2','承認処理を実行中...');
+    const card=$('wf-card1');
+    if(card){
+      card.style.borderLeftColor='#16A34A';
+      const divs=card.querySelectorAll('div');
+      if(divs[0]){const sb=divs[0].querySelector('div:last-child');if(sb){sb.textContent='承認済み ✓';sb.style.background='#DCFCE7';sb.style.color='#15803D';}}
+      const btns=$('wf-btns1');if(btns)btns.innerHTML='<span style="font-size:11px;color:#15803D;font-weight:600;">✓ 承認完了 — 2026/04/01 09:35 鈴木</span>';
+    }
+    addLog('log2','SAP: Manage Documented Credit Decisions — Release実行完了','log-ok');
+    addLog('log2','田中さんへ完了通知を送信しました','log-ok');
+    showCard('wm-card2',null,'',
+      `<div class="wm-tag selected"><div class="wm-tag-check">✓</div>承認完了</div><div class="wm-tag selected"><div class="wm-tag-check">✓</div>田中さんへ通知済み</div>`,
+      '✓ <strong>承認完了。</strong><br>田中さんへ完了通知を送信しました。<br><span class="cite">与信ブロック解除はDCD経由の標準処理フローで実施されます</span>',
+      '✓ 完了', null
+    );
+    setProg('pf2',100);siDone('si2-2');
+    setPills('ab2-pills','<div class="ab-pill active-green">✓ 承認完了</div><div class="ab-pill" style="color:#888;font-size:11px;">✓ 田中さんへ通知済み</div>');
+    addLog('log2','完了: Action Barから承認。画面検索不要。','log-ok');
+    d2Phase=99;
+  }
+}
+function d2Reset(){
+  d2Phase=0;
+  ['si2-0','si2-1','si2-2'].forEach((id,i)=>{const e=$(id);if(!e)return;e.classList.remove('done','active');if(i===0)e.classList.add('active');});
+  setProg('pf2',5);
+  const card=$('wf-card1');
+  if(card){
+    card.style.borderLeftColor='#E86C00';
+    const divs=card.querySelectorAll('div');
+    if(divs[0]){const sb=divs[0].querySelector('div:last-child');if(sb){sb.textContent='要承認';sb.style.background='#FDEBD0';sb.style.color='#E86C00';}}
+    const btns=$('wf-btns1');
+    if(btns)btns.innerHTML='<button style="background:#0064D9;color:white;border:none;padding:4px 12px;border-radius:3px;font-size:11px;font-weight:600;cursor:pointer;" onclick="d2Next()">承認</button> <button style="background:white;color:#E86C00;border:1px solid #E86C00;padding:4px 12px;border-radius:3px;font-size:11px;font-weight:600;cursor:pointer;">却下</button> <button style="background:white;color:#6B6D70;border:1px solid #BABBBD;padding:4px 12px;border-radius:3px;font-size:11px;cursor:pointer;" onclick="d2Next()">詳細を確認</button>';
+  }
+  closeAllCards();
+  setPills('ab2-pills','<div class="ab-pill" style="background:#FFF3E0;border-color:#E86C00;color:#C25400;" onclick="d2Next()">⚠ 鈴木製作所 超過¥1.0M</div><div class="ab-pill active-blue" onclick="d2Next()">✨ 承認根拠を確認</div><div class="ab-pill" style="color:#888;">📋 東京商事 確認中</div>');
+  $('log2').innerHTML='';
+}
+
+// ── DEMO 3: NAKAMURA ──
+let d3Phase=0;
+function showST(n){
+  [1,2,3].forEach(i=>{const e=$('stpop'+i);if(e)e.classList.remove('show');});
+  const p=$('stpop'+n);if(p)p.classList.add('show');
+  addLog('log3','SmartTip: 「'+(['得意先コード','支払条件','参照番号'][n-1])+'」の説明を表示','log-wm');
+}
+function showSmartTip(n){showST(n);}
+function showFAQ(){
+  [1,2,3].forEach(i=>{const p=$('stpop'+i);if(p)p.classList.remove('show');});
+  showCard('wm-card3','wm-card3-title','よくある質問 — 受注登録',
+    '',
+    'Q: 得意先コードが見つからない → 取引先マスタ担当に確認<br>Q: 支払条件はどこで確認? → 取引先マスタに登録済みの値が自動表示<br>Q: 参照番号は自動入力? → <strong style="color:#16A34A;">はい。WalkMeがSalesforceのOpportunity IDを読み取り自動入力します</strong><br>Q: 明細行の追加方法は? → 「+行追加」ボタンをクリック',
+    '📋 Copy', null
+  );
+  addLog('log3','AI Action Bar: FAQリストを表示','log-wm');
+}
+function d3AskJoule(n){
+  [1,2,3].forEach(i=>{const p=$('stpop'+i);if(p)p.classList.remove('show');});
+  const resp={
+    1:'<strong>得意先コード</strong>はSAPの取引先マスタに登録された一意のIDです。Salesforceの「顧客コード」と一対一で対応しており、このコードで取引先の全情報（与信・支払条件・住所など）が自動紐付けされます。今回は <strong>C-00381</strong>（株式会社鈴木製作所）です。',
+    2:'<strong>支払条件コード ZB01</strong> = 月末締め翌月末払い（デモ用サンプルキー）。当月末日を締め日として、翌月末日に支払が確定します。得意先マスタの販売ビュー（KNVV）から第1優先で自動参照され、販売ビューに未設定の場合は会社コードビュー（KNB1）が第2優先で適用されます。',
+    3:'<strong>参照番号（VBKD-IHREZ）</strong>はSAP標準フィールド（最大35文字）です。デモではSalesforceのOpportunity IDを格納して案件を紐付けます。WalkMeが自動入力するためClean Coreを維持できます。<span style="font-size:10px;color:#94A3B8;">本番設計では運用規約（IHREZの用途定義）の明示を推奨</span>'
+  };
+  const titles=['得意先コードについて','支払条件について','参照番号について'];
+  showCard('wm-card3','wm-card3-title',titles[n-1]||'Joule — 詳細説明','',resp[n]||'','📋 Copy',null);
+  if(d3Phase<=1){siDone('si3-1');siActive('si3-2');setProg('pf3',65);d3Phase=2;}
+  addLog('log3','Joule: SmartTipから深掘り → '+(['得意先コード','支払条件','参照番号'][n-1])+'の詳細説明','log-jo');
+}
+// SWTバルーン制御ヘルパー
+function showBal(n){
+  [1,2,3,4].forEach(i=>{const b=$('wt-bal'+i);if(b)b.classList.remove('show');});
+  const b=$('wt-bal'+n);if(b)b.classList.add('show');
+  // フィールドラベルハイライト
+  ['nc1-label','nc2-label','nc3-label','nc4-label'].forEach(id=>{
+    const el=$(id);if(el){el.style.color='';el.style.fontWeight='';}
+  });
+  const labelMap={1:'nc1-label',2:'nc2-label',3:'nc3-label',4:'nc4-label'};
+  const lbl=$(labelMap[n]);if(lbl){lbl.style.color='#15803D';lbl.style.fontWeight='700';}
+  // インプットボーダーハイライト
+  ['nc1','nc2','nc3','nc4'].forEach(id=>{
+    const el=$(id);if(el)el.style.outline='';
+  });
+  const inputMap={1:'nc1',2:'nc2',3:'nc3',4:'nc4'};
+  const inp=$(inputMap[n]);if(inp)inp.style.outline='2px solid #3CDB5D';
+}
+function hideBals(){
+  [1,2,3,4].forEach(i=>{const b=$('wt-bal'+i);if(b)b.classList.remove('show');});
+  ['nc1-label','nc2-label','nc3-label','nc4-label'].forEach(id=>{
+    const el=$(id);if(el){el.style.color='';el.style.fontWeight='';}
+  });
+  ['nc1','nc2','nc3','nc4'].forEach(id=>{
+    const el=$(id);if(el)el.style.outline='';
+  });
+}
+
+async function d3Next(){
+  d3Phase++;
+  if(d3Phase===1){
+    // Step 1: SWT起動 → 得意先コードをハイライト
+    addLog('log3','WalkMe: 新入社員セグメント検知 → Smart Walk-Thru 自動起動','log-wm');
+    $('nakamura-step').textContent='1';
+    $('wt-hint').textContent='Step 1/6: 受注登録を始めます。まず得意先コードを入力してください。';
+    $('wt-sub').textContent='フィールドが緑でハイライトされます。各「?」アイコンで意味を確認できます。';
+    showBal(1);
+    const aiTip=$('wm-ai-tip');if(aiTip)aiTip.classList.add('show');
+    const body=$('wm-ai-tip-body');if(body)body.innerHTML='<strong>Smart Walk-Thru が起動しました。</strong>フィールドをひとつずつ案内します。';
+    setPills('ab3-pills','<div class="ab-pill active-blue" onclick="d3Next()">▶ 次へ（得意先コード入力）</div><div class="ab-pill" onclick="showST(1)">? 得意先コードとは</div>');
+    addLog('log3','SWT Step 1: 得意先コードフィールドをハイライト','log-wm');
+  }else if(d3Phase===2){
+    // Step 2: 得意先コード入力
+    siDone('si3-0');siActive('si3-1');setProg('pf3',18);
+    $('nc1').textContent='C-00381';$('nc1').classList.add('filled');
+    $('nc1-field').classList.remove('sap-field-highlighted');
+    showBal(2);
+    $('nakamura-step').textContent='2';
+    $('wt-hint').textContent='Step 2/6: 支払条件を確認します。「?」をクリックして意味を確認してください。';
+    $('wt-sub').textContent='支払条件は取引先マスタから自動で表示されています。';
+    setPills('ab3-pills','<div class="ab-pill active-blue" onclick="d3Next()">▶ 次へ（支払条件確認）</div><div class="ab-pill" onclick="showST(2)" style="background:#FFF9C4;border-color:#F59E0B;color:#92400E;">? 支払条件を確認 ←クリック</div>');
+    addLog('log3','SWT Step 2: 得意先コード入力完了 → 支払条件フィールドへ移動','log-wm');
+  }else if(d3Phase===3){
+    // Step 3: SmartTip表示
+    siDone('si3-1');siActive('si3-2');setProg('pf3',38);
+    showST(2);
+    $('nakamura-step').textContent='3';
+    $('wt-hint').textContent='Step 3/6: SmartTipで「支払条件」の意味を確認。「AIにもっと詳しく聞く」でJouleに深掘りできます。';
+    $('wt-sub').textContent='ZB01はデモ用サンプルキー。実際のコードは顧客環境の設定に従います。';
+    setPills('ab3-pills','<div class="ab-pill active-blue" onclick="d3Next()">▶ 次へ（Jouleで深掘り）</div><div class="ab-pill active-purple" onclick="d3AskJoule(2)">✨ AIに詳しく聞く</div>');
+    addLog('log3','SWT Step 3: SmartTip「支払条件」表示','log-wm');
+  }else if(d3Phase===4){
+    // Step 4: Jouleカード
+    siDone('si3-2');siActive('si3-3');setProg('pf3',55);
+    d3AskJoule(2);
+    hideBals();
+    [1,2,3].forEach(i=>{const p=$('stpop'+i);if(p)p.classList.remove('show');});
+    $('nakamura-step').textContent='4';
+    $('wt-hint').textContent='Step 4/6: Jouleが支払条件を詳しく説明しました。確認したら次へ進みます。';
+    $('wt-sub').textContent='SmartTip → Joule深掘りの流れがWalkMeのハイブリッド設計です。';
+    setPills('ab3-pills','<div class="ab-pill active-blue" onclick="d3Next()">▶ 次へ（希望納期・参照番号）</div><div class="ab-pill" style="color:#888;">✓ 支払条件 理解済み</div>');
+    addLog('log3','SWT Step 4: Jouleカード表示（支払条件の詳細説明）','log-jo');
+  }else if(d3Phase===5){
+    // Step 5: 参照番号自動入力・希望納期
+    siDone('si3-3');siActive('si3-4');setProg('pf3',72);
+    closeAllCards();
+    // 参照番号（自動入力）
+    showBal(3);
+    $('nakamura-step').textContent='5';
+    $('wt-hint').textContent='Step 5/6: 参照番号はWalkMeが自動入力します。希望納期を入力してください。';
+    $('wt-sub').textContent='参照番号: SalesforceのOpportunity IDが自動で設定されます。';
+    await sleep(500);
+    $('nc3').textContent='OPP-2026-0412';$('nc3').classList.add('filled');
+    $('nc3-field').classList.remove('sap-field-highlighted');
+    showBal(4);
+    $('nc4').textContent='2026/06/30';$('nc4').classList.add('filled');
+    $('nc4-field').classList.remove('sap-field-highlighted');
+    await sleep(300);
+    $('nc2').textContent='ZB01（月末締め翌月末払い）';$('nc2').classList.add('filled');
+    hideBals();
+    addLog('log3','WalkMe Autofill: 参照番号（OPP-2026-0412）を自動入力','log-wm');
+    addLog('log3','SWT Step 5: 希望納期入力完了 → 全必須項目クリア','log-wm');
+    setPills('ab3-pills','<div class="ab-pill active-blue" onclick="d3Next()">▶ バリデーション実行</div><div class="ab-pill" style="color:#888;">✓ 全項目入力済み</div>');
+  }else if(d3Phase===6){
+    // Step 6: バリデーション完了
+    siDone('si3-4');siActive('si3-5');setProg('pf3',88);
+    closeAllCards();
+    $('nc1').textContent='C-00381';$('nc1').classList.add('filled');
+    $('nakamura-step').textContent='6';
+    $('wt-hint').textContent='Step 6/6: バリデーション実行中...';
+    $('wt-sub').textContent='必須項目・フォーマットをWalkMeが自動確認します。';
+    addLog('log3','WalkMe: Input Validation実行中...','log-wm');
+    await showLoad('dl3','Input Validation 実行中...');
+    addLog('log3','WalkMe: 必須4項目 全入力済み ✓ / 参照番号フォーマット ✓','log-ok');
+    addLog('log3','WalkMe: 保存前チェック完了（不完全伝票の予防）','log-ok');
+    $('wt-hint-box').style.borderColor='#3CDB5D';
+    $('wt-hint').textContent='✓ Step 6/6 完了 — 全必須項目クリア。保存前チェック完了（不完全伝票を予防）。差し戻しリスク: ゼロ';
+    $('wt-sub').textContent='SmartTip + Joule + Smart Walk-Thru の連携でゼロエラー完走。先輩への確認は不要です。';
+    setProg('pf3',100);siDone('si3-5');
+    const aiTip=$('wm-ai-tip');if(aiTip)aiTip.classList.add('show');
+    const body=$('wm-ai-tip-body');if(body)body.innerHTML='✓ <strong>全6ステップ完了。</strong>SmartTipsで疑問を解消し、Jouleで深掘りしながらミスなく完走できました。';
+    showCard('wm-card3','wm-card3-title','完了サマリ',
+      `<div class="wm-tag selected"><div class="wm-tag-check">✓</div>全6ステップ完了</div><div class="wm-tag selected"><div class="wm-tag-check">✓</div>バリデーション通過</div><div class="wm-tag selected"><div class="wm-tag-check">✓</div>差し戻しリスク ゼロ</div>`,
+      '✓ <strong>全6ステップ完了。</strong>SWT自動起動 → 得意先コード入力 → SmartTipで支払条件確認 → Jouleで深掘り → 参照番号自動入力 → バリデーション通過。先輩への確認ゼロ、差し戻しリスクゼロ。',
+      '📋 Copy', null
+    );
+    setPills('ab3-pills','<div class="ab-pill active-green">✓ 全6ステップ完了</div><div class="ab-pill active-green">✓ バリデーション通過</div>');
+    d3Phase=99;
+  }
+}
+function d3Reset(){
+  d3Phase=0;
+  ['si3-0','si3-1','si3-2','si3-3','si3-4','si3-5'].forEach((id,i)=>{const e=$(id);if(!e)return;e.classList.remove('done','active');if(i===0)e.classList.add('active');});
+  setProg('pf3',5);
+  ['nc1','nc2','nc3','nc4'].forEach(id=>{const e=$(id);if(e){e.textContent='';e.className='sap-input';if(['nc1','nc3','nc4'].includes(id))e.classList.add('required');}});
+  [1,2,3].forEach(i=>{const p=$('stpop'+i);if(p)p.classList.remove('show');});
+  hideBals();
+  ['nc1-field','nc2-field','nc3-field','nc4-field'].forEach(id=>{const el=$(id);if(el)el.classList.remove('sap-field-highlighted');});
+  const aiTip=$('wm-ai-tip');if(aiTip)aiTip.classList.remove('show');
+  closeAllCards();
+  $('nakamura-step').textContent='1';if($('ab3-step'))$('ab3-step').textContent='1';
+  $('wt-hint-box').style.borderColor='#3CDB5D';
+  $('wt-hint').textContent='Smart Walk-Thru が起動します。▶ を押して Step 1 から始めてください。';
+  $('wt-sub').textContent='各フィールドをひとつずつ案内します。SmartTips の ? でフィールドの意味を確認できます。';
+  const errbox=$('wt-error-box');if(errbox)errbox.style.display='none';
+  setPills('ab3-pills','<div class="ab-pill active-blue" onclick="d3Next()">▶ Smart Walk-Thru を開始</div><div class="ab-pill active-purple" onclick="d3AskJoule(2)">Tools ✨</div>');
+  $('log3').innerHTML='';
+}
+
+
+// Init
+document.addEventListener("DOMContentLoaded",()=>{
+  showAB("ab1");
+});
+</script>
+</body>
+</html>
