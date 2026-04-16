@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WalkMe Joule Action Bar × SAP — 入力検証ゲート デモ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --wm-dark:    #0D1B3E;
+  --wm-darker:  #091428;
+  --wm-navy:    #132050;
+  --wm-blue:    #1F56AE;
+  --wm-lblue:   #4A9FE0;
+  --wm-indigo:  #3D2FA0;
+  --wm-green:   #3CDB5D;
+  --wm-green2:  #2BC44F;
+  --wm-white:   #FFFFFF;
+  --wm-light:   #F4F6FA;
+  --wm-border:  rgba(255,255,255,0.1);
+  --wm-border2: rgba(255,255,255,0.06);
+  --text:       #E8EDF8;
+  --muted:      rgba(255,255,255,0.45);
+  --muted2:     rgba(255,255,255,0.65);
+  --sans: 'Inter', 'Noto Sans JP', sans-serif;
+  --sap-blue:   #0064D9;
+  --sap-dark:   #002B5E;
+  --sap-header: #003B73;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--wm-darker);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--wm-darker); }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
+
+/* ── NAVIGATION ── */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  background: rgba(13,27,62,0.96);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--wm-border);
+  display: flex; align-items: center; height: 56px; padding: 0 32px; gap: 0;
+}
+.nav-logo {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 13px; font-weight: 700; color: var(--wm-white);
+  margin-right: 32px; white-space: nowrap; letter-spacing: -0.2px;
+}
+.nav-logo-mark {
+  width: 28px; height: 28px; border-radius: 6px;
+  background: linear-gradient(135deg, var(--wm-green), var(--wm-lblue));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800; color: var(--wm-dark); flex-shrink: 0;
+}
+.nav-items { display: flex; flex: 1; overflow-x: auto; gap: 0; }
+.nav-item {
+  padding: 0 16px; height: 56px; display: flex; align-items: center;
+  font-size: 12px; font-weight: 500; color: var(--muted);
+  cursor: pointer; white-space: nowrap;
+  border-bottom: 2px solid transparent; transition: all .15s;
+}
+.nav-item:hover { color: var(--wm-white); }
+.nav-item.active { color: var(--wm-green); border-bottom-color: var(--wm-green); }
+
+/* ── SECTIONS ── */
+section { padding: 80px 40px 64px; max-width: 1080px; margin: 0 auto; }
+.sec-divider { height: 1px; background: var(--wm-border); margin: 0; }
+.sec-eyebrow { font-size: 10px; font-weight: 700; color: var(--wm-green); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+.sec-title { font-size: clamp(22px, 3vw, 30px); font-weight: 700; color: var(--wm-white); margin-bottom: 16px; letter-spacing: -0.5px; }
+.sec-body { font-size: 13px; color: var(--muted2); line-height: 1.8; margin-bottom: 32px; max-width: 700px; }
+
+/* ── HERO ── */
+.hero-wrap {
+  min-height: 100vh; padding: 100px 40px 80px;
+  max-width: 1080px; margin: 0 auto;
+  display: flex; flex-direction: column; justify-content: center;
+}
+.hero-bg {
+  position: fixed; inset: 0; pointer-events: none; z-index: -1;
+  background:
+    radial-gradient(ellipse 60% 50% at 70% 20%, rgba(60,219,93,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 60% at 10% 80%, rgba(74,159,224,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 40% at 50% 50%, rgba(61,47,160,0.08) 0%, transparent 70%);
+}
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(60,219,93,0.1); border: 1px solid rgba(60,219,93,0.25);
+  border-radius: 100px; padding: 5px 14px; width: fit-content; margin-bottom: 24px;
+}
+.eyebrow-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--wm-green); box-shadow: 0 0 8px var(--wm-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:.4;transform:scale(.7);} }
+.eyebrow-text { font-size: 11px; font-weight: 600; color: var(--wm-green); letter-spacing: 1.5px; text-transform: uppercase; }
+.hero-wrap h1 {
+  font-size: clamp(28px, 4vw, 50px); font-weight: 700;
+  line-height: 1.15; letter-spacing: -1.5px; margin-bottom: 20px; color: var(--wm-white);
+}
+.hero-wrap h1 span { color: var(--wm-green); }
+.hero-sub { font-size: 14px; color: var(--muted2); max-width: 640px; line-height: 1.85; margin-bottom: 32px; }
+.hero-ctas { display: flex; gap: 10px; margin-bottom: 36px; flex-wrap: wrap; }
+.btn-primary {
+  padding: 10px 24px; border-radius: 6px; font-size: 13px; font-weight: 600;
+  background: var(--wm-green); color: var(--wm-dark); border: none; cursor: pointer;
+  transition: background .15s;
+}
+.btn-primary:hover { background: var(--wm-green2); }
+.btn-secondary {
+  padding: 10px 24px; border-radius: 6px; font-size: 13px; font-weight: 600;
+  background: transparent; color: var(--wm-white); border: 1px solid var(--wm-border); cursor: pointer;
+}
+.btn-secondary:hover { border-color: var(--wm-green); color: var(--wm-green); }
+.hero-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 12px; border-radius: 100px; font-size: 11px; font-weight: 500;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.chip-green { color: var(--wm-green); border-color: rgba(60,219,93,0.25); }
+.chip-blue { color: var(--wm-lblue); border-color: rgba(74,159,224,0.25); }
+.chip-white { color: var(--muted2); }
+.chip span { font-size: 7px; }
+
+/* ── SUMMARY ── */
+.summary-box {
+  background: rgba(60,219,93,0.04); border: 1px solid rgba(60,219,93,0.15);
+  border-radius: 8px; padding: 18px 22px; margin-bottom: 32px;
+}
+.summary-box p { font-size: 13px; color: var(--muted2); line-height: 1.85; }
+.summary-box strong { color: var(--wm-green); }
+.verdict { border-left: 3px solid; padding: 10px 14px; border-radius: 0 6px 6px 0; margin-bottom: 10px; font-size: 12px; line-height: 1.75; }
+.v-info { border-color: var(--wm-lblue); background: rgba(74,159,224,0.06); color: rgba(160,200,255,.85); }
+.v-info strong { color: var(--wm-lblue); }
+
+/* ── DEMO AREA ── */
+.demo-inner { padding: 20px 40px 64px; max-width: 1080px; margin: 0 auto; }
+
+/* ステップインジケーター */
+.step-ind { display: flex; gap: 2px; margin-bottom: 6px; flex-wrap: wrap; }
+.si {
+  padding: 4px 10px; border-radius: 3px; font-size: 10px; font-weight: 600;
+  background: rgba(255,255,255,0.04); color: var(--muted); border: 1px solid var(--wm-border2);
+  transition: all .2s;
+}
+.si.active { background: rgba(74,159,224,0.12); color: var(--wm-lblue); border-color: rgba(74,159,224,0.3); }
+.si.done { background: rgba(60,219,93,0.08); color: var(--wm-green); border-color: rgba(60,219,93,0.2); }
+
+/* プログレスバー */
+.prog { height: 3px; background: rgba(255,255,255,0.06); border-radius: 2px; margin-bottom: 12px; overflow: hidden; }
+.prog-fill { height: 100%; background: linear-gradient(90deg, var(--wm-green), var(--wm-lblue)); border-radius: 2px; transition: width .4s ease; }
+
+/* ブラウザモック */
+.browser {
+  background: #F5F6F7; border: 1px solid var(--wm-border); border-radius: 8px; overflow: hidden;
+  position: relative;
+}
+.browser-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; background: #E8E8E8; border-bottom: 1px solid #CCC;
+}
+.bdots { display: flex; gap: 5px; }
+.bdot { width: 10px; height: 10px; border-radius: 50%; }
+.burl {
+  flex: 1; background: white; border-radius: 4px; padding: 3px 10px;
+  font-size: 10px; color: #666; font-family: monospace;
+}
+.bcontent { position: relative; min-height: 420px; }
+
+/* ── SAP Fiori Horizon ── */
+.sap-shellbar {
+  display: flex; align-items: center; height: 40px;
+  background: var(--sap-header); padding: 0 14px; gap: 12px;
+}
+.sap-logo { font-size: 14px; font-weight: 700; color: #3CCF9E; letter-spacing: 1px; }
+.sap-shell-title { font-size: 12px; color: rgba(255,255,255,0.85); font-weight: 500; }
+.sap-shell-right { margin-left: auto; display: flex; gap: 10px; align-items: center; }
+.sap-shell-icon { width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.12); display: flex; align-items: center; justify-content: center; font-size: 12px; color: white; }
+.sap-shell-avatar { width: 28px; height: 28px; border-radius: 50%; background: #E86C00; font-size: 10px; font-weight: 700; color: white; display: flex; align-items: center; justify-content: center; }
+
+.sap-breadcrumb { padding: 8px 14px; font-size: 10px; color: #6A6D70; border-bottom: 1px solid #E5E5E5; background: white; }
+.sap-breadcrumb a { color: var(--sap-blue); text-decoration: none; }
+
+.sap-page-header {
+  background: white; padding: 12px 14px; border-bottom: 1px solid #E5E5E5;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.sap-page-title { font-size: 16px; font-weight: 700; color: #1A1A1A; }
+
+.sap-content { padding: 12px 14px; background: #F5F6F7; }
+
+.sap-section-card { background: white; border: 1px solid #D9D9D9; border-radius: 4px; margin-bottom: 10px; overflow: hidden; }
+.sap-section-card-header {
+  padding: 8px 12px; background: #F5F6F7; border-bottom: 1px solid #E5E5E5;
+  font-size: 11px; font-weight: 700; color: #333; display: flex; align-items: center; justify-content: space-between;
+}
+.sap-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; padding: 0; }
+.sap-field {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 12px; border-bottom: 1px solid #F0F0F0;
+  position: relative;
+}
+.sap-label { font-size: 11px; color: #6A6D70; min-width: 110px; flex-shrink: 0; }
+.sap-input {
+  flex: 1; padding: 5px 8px; border: 1px solid #89919A; border-radius: 3px;
+  font-size: 12px; color: #1A1A1A; background: white; min-height: 28px;
+  font-family: var(--sans); transition: all .2s;
+}
+.sap-input.filled { border-color: var(--sap-blue); background: #F0F7FF; }
+.sap-input.error { border-color: #CC1919; background: #FFF0F0; }
+.sap-input.ok { border-color: #36A41D; background: #F0FFF0; }
+.sap-input.readonly { background: #F5F6F7; border-color: #D9D9D9; color: #6A6D70; }
+
+/* SAP 保存ボタン群 */
+.sap-footer-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 14px; background: white; border-top: 1px solid #E5E5E5;
+  position: relative;
+}
+.sap-btn {
+  padding: 6px 16px; border-radius: 3px; font-size: 11px; font-weight: 600;
+  cursor: pointer; border: 1px solid; transition: all .15s;
+}
+.sap-btn-primary { background: var(--sap-blue); color: white; border-color: var(--sap-blue); }
+.sap-btn-primary:hover { background: #0054B4; }
+.sap-btn-primary:disabled { opacity: .4; cursor: not-allowed; }
+.sap-btn-secondary { background: white; color: #333; border-color: #89919A; }
+
+/* ── WalkMe Launcher（保存ボタン上のゲート） ── */
+.wm-launcher {
+  position: absolute; top: 0; left: 0;
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 4px;
+  background: linear-gradient(135deg, #1D4ED8, #3B82F6);
+  color: white; font-size: 11px; font-weight: 600;
+  cursor: pointer; z-index: 20;
+  box-shadow: 0 2px 8px rgba(29,78,216,0.3);
+  transition: all .3s ease;
+  white-space: nowrap;
+}
+.wm-launcher::before {
+  content: '🔒'; font-size: 12px;
+}
+.wm-launcher:hover { background: linear-gradient(135deg, #1E40AF, #2563EB); transform: translateY(-1px); }
+.wm-launcher.hidden {
+  opacity: 0; transform: translateY(8px); pointer-events: none;
+}
+
+/* ── WalkMe Action Bar ── */
+.walkme-ab {
+  position: relative;
+  display: flex; align-items: center;
+  background: white; border: 1px solid #E2E8F0;
+  border-radius: 0 0 8px 8px;
+  height: 44px;
+  box-shadow: 0 -2px 12px rgba(0,0,0,.06);
+  padding: 0 10px; gap: 6px;
+  transform: translateY(100%);
+  transition: transform .3s cubic-bezier(.16,1,.3,1);
+}
+.walkme-ab.show { transform: translateY(0); }
+.ab-me-logo {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: #0A66C2;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 900; color: white;
+  flex-shrink: 0; cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0,0,0,.2);
+}
+.ab-icon-btn {
+  width: 28px; height: 28px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; color: #64748B; cursor: pointer; flex-shrink: 0;
+}
+.ab-icon-btn:hover { background: #F1F5F9; }
+.ab-center { display: flex; align-items: center; gap: 6px; flex: 1; overflow: hidden; }
+.ab-pill {
+  display: flex; align-items: center; gap: 5px;
+  padding: 5px 14px; border-radius: 100px;
+  font-size: 12px; font-weight: 500; color: #334155;
+  background: #F1F5F9; border: 1px solid #E2E8F0;
+  cursor: pointer; white-space: nowrap; flex-shrink: 0;
+  transition: all .15s;
+}
+.ab-pill:hover { background: #E2E8F0; border-color: #CBD5E1; }
+.ab-pill.active-blue { background: #1D4ED8; color: white; border-color: #1D4ED8; }
+.ab-pill.active-blue:hover { background: #1E40AF; }
+.ab-pill.active-green { background: #16A34A; color: white; border-color: #16A34A; }
+.ab-pill.active-green:hover { background: #15803D; }
+.ab-pill.active-red { background: #DC2626; color: white; border-color: #DC2626; }
+.ab-pill.active-orange { background: #EA580C; color: white; border-color: #EA580C; }
+.ab-right { display: flex; align-items: center; gap: 4px; margin-left: auto; flex-shrink: 0; }
+.ab-right-btn {
+  width: 28px; height: 28px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; color: #94A3B8; cursor: pointer;
+}
+.ab-right-btn:hover { background: #F1F5F9; color: #475569; }
+
+/* ── WalkMe AIカードポップアップ ── */
+.wm-card-overlay {
+  position: absolute; bottom: 52px; left: 50%; transform: translateX(-50%);
+  width: 420px; max-width: calc(100% - 24px);
+  background: white; border: 1px solid #E2E8F0; border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.15), 0 2px 8px rgba(0,0,0,.08);
+  z-index: 60; display: none;
+  animation: cardSlideUp .25s cubic-bezier(.16,1,.3,1);
+}
+@keyframes cardSlideUp { from{opacity:0;transform:translateX(-50%) translateY(12px);} to{opacity:1;transform:translateX(-50%) translateY(0);} }
+.wm-card-overlay.show { display: block; }
+.wm-card-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 14px 10px;
+  border-bottom: 1px solid #F1F5F9;
+}
+.wm-card-me { width: 22px; height: 22px; border-radius: 50%; background: #0A66C2; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 900; color: white; flex-shrink: 0; }
+.wm-card-title { font-size: 13px; font-weight: 600; color: #0F172A; flex: 1; }
+.wm-card-ai-warn { font-size: 10px; color: #94A3B8; }
+.wm-card-icons { display: flex; gap: 4px; }
+.wm-card-icon { font-size: 14px; color: #94A3B8; cursor: pointer; padding: 2px; }
+.wm-card-icon:hover { color: #475569; }
+.wm-card-body { padding: 12px 14px; max-height: 320px; overflow-y: auto; }
+.wm-card-detail {
+  font-size: 12px; color: #475569; line-height: 1.75;
+  background: #F8FAFC; border-radius: 6px; padding: 10px 12px; margin-bottom: 10px;
+}
+.wm-card-detail strong { color: #0F172A; }
+.wm-card-footer { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-top: 1px solid #F1F5F9; }
+.wm-copy-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 16px; border-radius: 100px;
+  background: #1D4ED8; color: white; border: none;
+  font-size: 12px; font-weight: 600; cursor: pointer; transition: background .15s;
+}
+.wm-copy-btn:hover { background: #1E40AF; }
+.wm-copy-btn.green { background: #16A34A; }
+.wm-copy-btn.green:hover { background: #15803D; }
+.wm-refresh-btn {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: #F1F5F9; border: 1px solid #E2E8F0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; cursor: pointer; color: #64748B;
+}
+.wm-refresh-btn:hover { background: #E2E8F0; }
+
+/* 利用可能科目一覧テーブル */
+.acct-list { margin-top: 8px; }
+.acct-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 10px; border-radius: 4px; font-size: 12px;
+  cursor: pointer; transition: background .1s;
+}
+.acct-item:hover { background: #EFF6FF; }
+.acct-code { font-weight: 600; color: #1D4ED8; min-width: 60px; font-family: monospace; }
+.acct-name { color: #334155; flex: 1; }
+.acct-item.recommended { background: #F0FDF4; border: 1px solid #BBF7D0; }
+.acct-item.recommended .acct-code { color: #16A34A; }
+
+/* 参照元情報 */
+.ref-info { font-size: 10px; color: #94A3B8; margin-top: 8px; padding-top: 6px; border-top: 1px solid #F1F5F9; }
+
+/* ── DEMO CONTROLS ── */
+.demo-controls { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.demo-btn {
+  padding: 7px 16px; border-radius: 5px; font-size: 11px; font-weight: 600;
+  cursor: pointer; border: 1px solid var(--wm-border); background: rgba(255,255,255,0.05);
+  color: var(--muted2); transition: all .15s;
+}
+.demo-btn:hover { border-color: var(--wm-green); color: var(--wm-green); }
+.demo-btn.primary { background: var(--wm-green); color: var(--wm-dark); border-color: var(--wm-green); }
+.demo-btn.primary:hover { background: var(--wm-green2); }
+.demo-log {
+  margin-top: 10px; background: rgba(0,0,0,.3); border: 1px solid var(--wm-border);
+  border-radius: 4px; padding: 8px 10px; font-family: monospace; font-size: 10px;
+  line-height: 1.9; max-height: 120px; overflow-y: auto; color: var(--muted);
+}
+.log-wm { color: var(--wm-green); }
+.log-jo { color: var(--wm-lblue); }
+.log-ok { color: #28C840; }
+.log-warn { color: #FFB347; }
+.log-err { color: #FF6B6B; }
+
+/* ── SCENARIO SECTION ── */
+.scenario-box {
+  background: rgba(255,255,255,0.02); border: 1px solid var(--wm-border);
+  border-radius: 8px; padding: 18px 22px; margin-bottom: 16px;
+}
+.pain-box {
+  background: rgba(255,80,80,0.04); border: 1px solid rgba(255,80,80,0.12);
+  border-radius: 6px; padding: 12px 16px; margin-bottom: 12px;
+  font-size: 12px; color: rgba(255,160,160,.9); line-height: 1.8;
+}
+.wow-box {
+  background: rgba(60,219,93,0.04); border: 1px solid rgba(60,219,93,0.12);
+  border-radius: 6px; padding: 12px 16px;
+  font-size: 12px; color: rgba(150,240,170,.9); line-height: 1.8;
+}
+.wow-box strong, .pain-box strong { color: inherit; font-weight: 700; }
+
+/* ── CONCERNS ── */
+.concern-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 40px; }
+.concern-card { background: rgba(255,255,255,0.03); border: 1px solid var(--wm-border); border-radius: 8px; overflow: hidden; }
+.concern-head {
+  display: flex; align-items: center; gap: 10px; padding: 12px 16px; cursor: pointer; transition: background .15s;
+}
+.concern-head:hover { background: rgba(255,255,255,0.03); }
+.risk-tag { font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 3px; letter-spacing: .5px; text-transform: uppercase; flex-shrink: 0; }
+.risk-high { background: rgba(255,80,80,0.12); color: #FF9090; border: 1px solid rgba(255,80,80,0.2); }
+.risk-med { background: rgba(255,183,77,0.12); color: #FFB347; border: 1px solid rgba(255,183,77,0.2); }
+.concern-title { font-size: 13px; font-weight: 500; color: var(--wm-white); flex: 1; line-height: 1.4; }
+.concern-arr { color: var(--muted); transition: transform .2s; }
+.concern-card.open .concern-arr { transform: rotate(180deg); }
+.concern-detail { display: none; padding: 0 16px 14px; }
+.concern-card.open .concern-detail { display: block; }
+.concern-issue { font-size: 12px; color: var(--muted2); line-height: 1.75; margin-bottom: 8px; }
+.concern-resolve {
+  background: rgba(60,219,93,0.06); border: 1px solid rgba(60,219,93,0.15);
+  border-radius: 5px; padding: 8px 12px; font-size: 12px; color: rgba(150,240,170,.85); line-height: 1.75;
+}
+.concern-resolve strong { color: var(--wm-green); }
+
+/* ── FOOTER ── */
+.footer { text-align: center; padding: 40px; border-top: 1px solid var(--wm-border); font-size: 11px; color: var(--muted); }
+
+/* ── LOADING ── */
+.demo-load { position: absolute; inset: 0; background: rgba(245,246,247,0.92); z-index: 100; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 10px; border-radius: 0 0 8px 8px; }
+.demo-load.show { display: flex; }
+.demo-load-spinner { width: 28px; height: 28px; border: 3px solid #E2E8F0; border-top-color: #1D4ED8; border-radius: 50%; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.demo-load-txt { font-size: 11px; color: #64748B; }
+
+@media (max-width: 640px) {
+  section, .hero-wrap, .demo-inner { padding-left: 20px; padding-right: 20px; }
+  .nav { padding: 0 16px; }
+  .sap-form-grid { grid-template-columns: 1fr; }
+  .wm-card-overlay { width: calc(100% - 16px); }
+}
+</style>
+</head>
+<body>
+<div class="hero-bg"></div>
+
+<!-- NAVIGATION -->
+<nav class="nav">
+  <div class="nav-logo">
+    <div class="nav-logo-mark">W</div>
+    WalkMe Joule Action Bar
+  </div>
+  <div class="nav-items">
+    <div class="nav-item active" onclick="goTo('hero')">概要</div>
+    <div class="nav-item" onclick="goTo('scenario')">シナリオ</div>
+    <div class="nav-item" onclick="goTo('demo')">デモ</div>
+    <div class="nav-item" onclick="goTo('concerns')">懸念点</div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero-wrap" id="hero">
+  <div class="hero-eyebrow">
+    <div class="eyebrow-dot"></div>
+    <span class="eyebrow-text">技術検証 — 入力検証ゲート PoC</span>
+  </div>
+  <h1>Joule Action Bar ×<br><span>WalkMe Launcher</span><br>入力検証ゲート</h1>
+  <p class="hero-sub">SAP S/4HANA Cloud 伝票入力における部門コード × 勘定科目の不正組み合わせを、Jouleカスタムスキルの検証を通過して初めて保存可能にする「ゲート型」の設計。BAdIが使えない前提での補助的ゲートとして、Joule Action Bar + WalkMe Launcherの連携で実現する。</p>
+  <div class="hero-ctas">
+    <button class="btn-primary" onclick="goTo('demo')">デモを動かす</button>
+    <button class="btn-secondary" onclick="goTo('scenario')">シナリオ詳細</button>
+  </div>
+  <div class="hero-chips">
+    <div class="chip chip-green"><span>●</span> WalkMe Joule Action Bar</div>
+    <div class="chip chip-blue"><span>●</span> SAP S/4HANA Cloud</div>
+    <div class="chip chip-white"><span>●</span> Manage Journal Entries (F0718)</div>
+  </div>
+</div>
+
+<!-- SCENARIO -->
+<div class="sec-divider"></div>
+<section id="scenario">
+  <div class="sec-eyebrow">Scenario</div>
+  <div class="sec-title">佐藤さんの業務 — 伝票入力の「あるある」</div>
+  <div class="scenario-box">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;font-size:12px;color:var(--muted2);margin-bottom:16px;">
+      <div><span style="color:var(--muted);font-size:10px;display:block;margin-bottom:2px;">ペルソナ</span>佐藤さん（入社3年目・経理担当）</div>
+      <div><span style="color:var(--muted);font-size:10px;display:block;margin-bottom:2px;">対象アプリ</span>Manage Journal Entries (F0718)</div>
+      <div><span style="color:var(--muted);font-size:10px;display:block;margin-bottom:2px;">業務</span>製造部門の経費伝票入力</div>
+      <div><span style="color:var(--muted);font-size:10px;display:block;margin-bottom:2px;">月間件数</span>約30件（月末集中）</div>
+    </div>
+    <div class="pain-box">
+      😤 <strong>導入前の痛み：</strong> 部門コードを入力後、共有フォルダのExcel対照表（v3_最終_山本修正.xlsx? v4_確定版(2).xlsx?）を探して科目を確認。見つからないと隣の先輩に「1000番台って何使えましたっけ？」と聞く。先輩も忙しいので「たぶん500000番台」と曖昧な回答。それを信じて保存→転記後に「製造部門に販売費」と発覚→修正仕訳→上長説明→再承認。1件の確認に2〜3分、差し戻し修正に15分。
+    </div>
+    <div class="wow-box">
+      ✨ <strong>WowMoment：</strong> 画面を開いた瞬間にAction Barが「部門・科目の組み合わせをチェックできます」と提案。部門コードを入力→勘定科目を入力→「チェック」ボタン1クリック→1秒でOK/NG判定。NGなら正しい科目一覧がカードで表示。OKならLauncherが消えて保存ボタンが現れる。Excel対照表も先輩への質問も差し戻しも不要に。
+    </div>
+  </div>
+
+  <div class="sec-eyebrow" style="margin-top:32px;">Design Principle</div>
+  <div class="sec-title" style="font-size:20px;">「ブロック」ではなく「ゲート」</div>
+  <div class="summary-box">
+    <p>保存ボタンは最初からWalkMe Launcherで覆われた状態（保存不可）がデフォルト。Jouleカスタムスキルによる検証を通過して初めてLauncherが消え、保存可能になる。<strong>「間違えたら止める」のではなく「正しいことを確認してから通す」</strong>設計。</p>
+  </div>
+</section>
+
+<!-- DEMO -->
+<div class="sec-divider"></div>
+<section id="demo" style="padding-bottom:20px;">
+  <div class="sec-eyebrow">Interactive Demo</div>
+  <div class="sec-title">佐藤さんの伝票入力 — NG→修正→OK→保存</div>
+  <p class="sec-body">「▶ 次のステップへ」を押してデモを進めてください。ログエリアでWalkMe/Jouleの裏側の動作を確認できます。</p>
+</section>
+<div class="demo-inner">
+  <div style="font-size:11px;color:var(--muted2);margin-bottom:8px;padding:5px 10px;background:rgba(255,255,255,0.03);border-radius:4px;border-left:2px solid var(--wm-green);">
+    シナリオ：伝票入力画面を開く → 部門・科目入力 → NG判定（販売費は使えません） → 修正 → OK判定 → ゲート解除 → 保存
+  </div>
+  <div class="step-ind">
+    <div class="si active" id="si-0">画面表示・ゲート設置</div>
+    <div class="si" id="si-1">部門コード入力</div>
+    <div class="si" id="si-2">勘定科目入力(NG)</div>
+    <div class="si" id="si-3">チェック→NG判定</div>
+    <div class="si" id="si-4">科目修正</div>
+    <div class="si" id="si-5">再チェック→OK</div>
+    <div class="si" id="si-6">ゲート解除</div>
+    <div class="si" id="si-7">保存完了</div>
+  </div>
+  <div class="prog"><div class="prog-fill" id="pf" style="width:3%"></div></div>
+
+  <div class="browser">
+    <div class="browser-bar">
+      <div class="bdots">
+        <div class="bdot" style="background:#FF5F57;"></div>
+        <div class="bdot" style="background:#FFBD2E;"></div>
+        <div class="bdot" style="background:#28C840;"></div>
+      </div>
+      <div class="burl">https://my407XXX.s4hana.cloud.sap/ui#JournalEntry-manage</div>
+    </div>
+    <div class="bcontent">
+      <!-- Loading overlay -->
+      <div class="demo-load" id="demo-load">
+        <div class="demo-load-spinner"></div>
+        <div class="demo-load-txt">Jouleカスタムスキル実行中...</div>
+      </div>
+
+      <!-- SAP Shellbar -->
+      <div class="sap-shellbar">
+        <div class="sap-logo">SAP</div>
+        <div class="sap-shell-title">S/4HANA Cloud</div>
+        <div class="sap-shell-right">
+          <div class="sap-shell-icon">🔔</div>
+          <div class="sap-shell-icon">👤</div>
+          <div class="sap-shell-avatar">佐</div>
+        </div>
+      </div>
+
+      <!-- Breadcrumb -->
+      <div class="sap-breadcrumb">
+        <a href="#">ホーム</a> &gt; <a href="#">会計伝票</a> &gt; 仕訳入力
+      </div>
+
+      <!-- Page Header -->
+      <div class="sap-page-header">
+        <div class="sap-page-title">仕訳入力 — 新規作成</div>
+        <div style="font-size:10px;color:#6A6D70;">Manage Journal Entries (F0718)</div>
+      </div>
+
+      <!-- Content -->
+      <div class="sap-content">
+        <!-- ヘッダー情報 -->
+        <div class="sap-section-card">
+          <div class="sap-section-card-header">ヘッダー情報</div>
+          <div class="sap-form-grid">
+            <div class="sap-field">
+              <div class="sap-label">会社コード</div>
+              <div class="sap-input readonly">1000 — SAP Japan</div>
+            </div>
+            <div class="sap-field">
+              <div class="sap-label">伝票日付</div>
+              <div class="sap-input readonly">2026/04/16</div>
+            </div>
+            <div class="sap-field">
+              <div class="sap-label">転記日付</div>
+              <div class="sap-input readonly">2026/04/16</div>
+            </div>
+            <div class="sap-field">
+              <div class="sap-label">通貨</div>
+              <div class="sap-input readonly">JPY</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 明細情報 -->
+        <div class="sap-section-card">
+          <div class="sap-section-card-header">
+            明細 — 行 1
+            <span id="validation-badge" style="font-size:9px;padding:2px 8px;border-radius:3px;background:#FEF3C7;color:#92400E;border:1px solid #FDE68A;display:none;">⏳ 未検証</span>
+          </div>
+          <div class="sap-form-grid">
+            <div class="sap-field" style="position:relative;">
+              <div class="sap-label">部門コード *</div>
+              <div class="sap-input" id="field-dept" style="min-width:120px;">—</div>
+            </div>
+            <div class="sap-field">
+              <div class="sap-label">転記キー</div>
+              <div class="sap-input readonly">40 — 借方転記</div>
+            </div>
+            <div class="sap-field" style="position:relative;">
+              <div class="sap-label">勘定科目 *</div>
+              <div class="sap-input" id="field-acct" style="min-width:120px;">—</div>
+            </div>
+            <div class="sap-field">
+              <div class="sap-label">金額</div>
+              <div class="sap-input" id="field-amount">—</div>
+            </div>
+            <div class="sap-field" style="grid-column:1/-1;">
+              <div class="sap-label">摘要</div>
+              <div class="sap-input" id="field-text" style="width:100%;">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer bar with save button -->
+      <div class="sap-footer-bar">
+        <div style="position:relative;display:inline-block;">
+          <button class="sap-btn sap-btn-primary" id="btn-save" disabled>保存</button>
+          <!-- WalkMe Launcher (gate) -->
+          <div class="wm-launcher" id="wm-launcher" onclick="demoNext()">入力チェック後に保存</div>
+        </div>
+        <button class="sap-btn sap-btn-secondary">下書き保存</button>
+        <button class="sap-btn sap-btn-secondary">キャンセル</button>
+        <div id="save-success" style="display:none;margin-left:auto;font-size:12px;color:#36A41D;font-weight:600;">✅ 伝票 1400000123 を保存しました</div>
+      </div>
+
+      <!-- Joule Card -->
+      <div class="wm-card-overlay" id="wm-card">
+        <div class="wm-card-header">
+          <div class="wm-card-me">me</div>
+          <span class="wm-card-title" id="wm-card-title">Joule — 検証結果</span>
+          <span class="wm-card-ai-warn">AI生成コンテンツ</span>
+          <div class="wm-card-icons">
+            <span class="wm-card-icon" onclick="closeCard()">✕</span>
+          </div>
+        </div>
+        <div class="wm-card-body" id="wm-card-body">
+          <div class="wm-card-detail" id="wm-card-detail">検証中...</div>
+        </div>
+        <div class="wm-card-footer" id="wm-card-footer">
+          <div class="wm-refresh-btn">↻</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WalkMe Action Bar -->
+    <div class="walkme-ab" id="ab">
+      <div class="ab-me-logo">me</div>
+      <div class="ab-icon-btn">✏</div>
+      <div class="ab-center" id="ab-pills">
+        <div class="ab-pill active-blue" onclick="demoNext()">✨ 部門・科目の組み合わせをチェックできます</div>
+      </div>
+      <div class="ab-right">
+        <div class="ab-right-btn">⋯</div>
+        <div class="ab-right-btn">⚙</div>
+        <div class="ab-right-btn">‹</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="demo-controls">
+    <button class="demo-btn primary" id="demo-next-btn" onclick="demoNext()">▶ 次のステップへ</button>
+    <button class="demo-btn" onclick="demoReset()">↺ リセット</button>
+  </div>
+  <div class="demo-log" id="log"></div>
+</div>
+
+<!-- CONCERNS -->
+<div class="sec-divider"></div>
+<section id="concerns">
+  <div class="sec-eyebrow">Key Verification Points</div>
+  <div class="sec-title">最重要検証ポイントと既知リスク</div>
+  <p class="sec-body">技術検証依頼書 + 4AI評価（SAP業務妥当性・技術実現性・変革管理・競合比較）で洗い出した懸念点。</p>
+
+  <div class="concern-list">
+    <div class="concern-card" onclick="toggleConcern(this)">
+      <div class="concern-head">
+        <span class="risk-tag risk-high">最優先</span>
+        <span class="concern-title">Joule Action Bar内のボタンアクションからWalkMeAPI.setVariable()を呼び出せるか</span>
+        <span class="concern-arr">▾</span>
+      </div>
+      <div class="concern-detail">
+        <div class="concern-issue">Joule Action BarはWalkMeのランタイム上で動作するため、同一JavaScriptコンテキスト内でWalkMe APIを呼び出すことは原理的に可能なはず。しかしGA直後のため、ボタンアクション設定でカスタムJS実行が許可されているかの実機確認が必要。</div>
+        <div class="concern-resolve"><strong>対応策：</strong> GA直後の最初の2週間でこの1点のみを集中検証。不可の場合はパターンB（OnScreen RulesによるDOM監視）にフォールバック。</div>
+      </div>
+    </div>
+
+    <div class="concern-card" onclick="toggleConcern(this)">
+      <div class="concern-head">
+        <span class="risk-tag risk-high">高</span>
+        <span class="concern-title">Jouleカードの表示領域制限・スクロール可否</span>
+        <span class="concern-arr">▾</span>
+      </div>
+      <div class="concern-detail">
+        <div class="concern-issue">NG時に「利用可能な勘定科目一覧」を表示するのがこのシナリオの核心的な体験。カード内のコンテンツにmax-height制限があり一覧が切れる場合、業務的に使い物にならない。</div>
+        <div class="concern-resolve"><strong>対応策：</strong> 代替A: テキストで科目範囲を案内。代替B: WalkMe ShoutOut（従来型ポップアップ）で一覧表示。代替C: Jouleチャットに「使える科目を教えて」と聞く導線。</div>
+      </div>
+    </div>
+
+    <div class="concern-card" onclick="toggleConcern(this)">
+      <div class="concern-head">
+        <span class="risk-tag risk-high">高</span>
+        <span class="concern-title">CDS View → OData → Jouleスキルのレスポンスタイム</span>
+        <span class="concern-arr">▾</span>
+      </div>
+      <div class="concern-detail">
+        <div class="concern-issue">チェックボタンクリックから結果表示までの目標は2秒以内。CDS Viewの複雑さ、ODataの認証オーバーヘッド、Jouleスキル処理のそれぞれでボトルネックが発生しうる。</div>
+        <div class="concern-resolve"><strong>対応策：</strong> CDS Viewはマスタテーブル参照のみ（CEPC+SKA1で軽量）。$select最小化・$expand回避。Communication Arrangementの認証キャッシュ活用。</div>
+      </div>
+    </div>
+
+    <div class="concern-card" onclick="toggleConcern(this)">
+      <div class="concern-head">
+        <span class="risk-tag risk-med">中</span>
+        <span class="concern-title">UI層ゲートの限界 — 開発者ツールでのバイパス・他チャネルからの投稿</span>
+        <span class="concern-arr">▾</span>
+      </div>
+      <div class="concern-detail">
+        <div class="concern-issue">4AI評価（SAP業務妥当性）で指摘：技術的に詳しいユーザーがDevToolsでLauncherを削除する可能性。また、テンプレートアップロード・API経由の仕訳投稿はUI層ゲートでは防げない。SAP標準のValidation/BAdIはサーバーサイドで全チャネルをブロック可能。</div>
+        <div class="concern-resolve"><strong>対応策：</strong> 本シナリオはBAdI対象外の制約下での補助的ゲートとして位置付け。実務上の一般ユーザーがDevTools操作を行うリスクは極めて低い。将来的にBAdI追加で完全対応可能。他チャネルの制御が必要な場合は、拡張パスとしてValidation（F4406/F2718）またはBAdI（FIN_CODING_BLOCK_VALIDATION）の追加を推奨。</div>
+      </div>
+    </div>
+
+    <div class="concern-card" onclick="toggleConcern(this)">
+      <div class="concern-head">
+        <span class="risk-tag risk-med">中</span>
+        <span class="concern-title">導入直後の「邪魔されている」感とベテランの抵抗</span>
+        <span class="concern-arr">▾</span>
+      </div>
+      <div class="concern-detail">
+        <div class="concern-issue">4AI評価（変革管理）で指摘：Launcherは導入直後は「邪魔」と感じられる（Jカーブ効果）。ベテラン経理は「不要な補助輪」と映る可能性。月末繁忙期のワンステップ追加は抵抗を生みうる。</div>
+        <div class="concern-resolve"><strong>対応策：</strong> 呼称を「不正防止ゲート」→「仕訳アシスタント」に変更。ベテランには「若手からの質問攻めから解放する仕組み」として訴求。導入は3〜5名パイロット（2週間）→全体展開。エラー履歴は「個人評価には使用しない」と部門長から宣言。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="footer">
+  © 2026 | WalkMe Joule Action Bar × SAP S/4HANA Cloud — 入力検証ゲート デモ v1
+</div>
+
+<script>
+// ── ヘルパー関数 ──
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const $ = id => document.getElementById(id);
+function addLog(txt, cls) {
+  const el = $('log'); if (!el) return;
+  const d = document.createElement('div'); d.className = cls || '';
+  const n = new Date();
+  d.textContent = `[${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}] ${txt}`;
+  el.appendChild(d); el.scrollTop = el.scrollHeight;
+}
+function setProg(pct) { const e = $('pf'); if (e) e.style.width = pct + '%'; }
+function siDone(id) { const e = $(id); if (e) { e.classList.remove('active'); e.classList.add('done'); } }
+function siActive(id) { const e = $(id); if (e) e.classList.add('active'); }
+function showAB() { const e = $('ab'); if (e) e.classList.add('show'); }
+
+async function typeIn(id, val, speed) {
+  speed = speed || 22;
+  const el = $(id); if (!el) return;
+  el.textContent = ''; el.classList.add('filled'); el.classList.remove('error', 'ok');
+  for (const ch of val) { el.textContent += ch; await sleep(speed); }
+  setTimeout(() => el.classList.remove('filled'), 800);
+}
+
+function setPills(html) {
+  const e = $('ab-pills'); if (e) e.innerHTML = html;
+}
+function showCard() { const c = $('wm-card'); if (c) c.classList.add('show'); }
+function closeCard() { const c = $('wm-card'); if (c) c.classList.remove('show'); }
+
+async function showLoad(txt) {
+  const ld = $('demo-load'); if (!ld) return;
+  ld.querySelector('.demo-load-txt').textContent = txt || '処理中...';
+  ld.classList.add('show');
+  await sleep(1800);
+  ld.classList.remove('show');
+}
+
+function goTo(id) {
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.querySelectorAll('.nav-item').forEach((n, i) => {
+    n.classList.toggle('active', n.textContent.includes(
+      id === 'hero' ? '概要' : id === 'scenario' ? 'シナリオ' : id === 'demo' ? 'デモ' : '懸念'
+    ));
+  });
+}
+function toggleConcern(card) { card.classList.toggle('open'); }
+
+// ── DEMO STATE ──
+let phase = 0;
+
+async function demoNext() {
+  phase++;
+  if (phase === 1) await p0_screenOpen();
+  else if (phase === 2) await p1_deptInput();
+  else if (phase === 3) await p2_acctInput();
+  else if (phase === 4) await p3_checkNG();
+  else if (phase === 5) await p4_correct();
+  else if (phase === 6) await p5_recheckOK();
+  else if (phase === 7) await p6_gateOpen();
+  else if (phase === 8) await p7_save();
+}
+
+// Phase 0: 画面表示 → Launcher + Action Bar表示
+async function p0_screenOpen() {
+  siDone('si-0'); siActive('si-1'); setProg(12);
+  addLog('[WalkMe] Launcher を保存ボタン上に配置（validation_status: pending）', 'log-wm');
+  addLog('[WalkMe] Action Bar: プロアクティブ提案を表示', 'log-wm');
+  showAB();
+  $('validation-badge').style.display = 'inline-block';
+  await sleep(300);
+  addLog('[WalkMe] Variable: validation_status = "pending"', 'log-wm');
+}
+
+// Phase 1: 部門コード入力
+async function p1_deptInput() {
+  siDone('si-1'); siActive('si-2'); setProg(25);
+  await typeIn('field-dept', '1000 — 製造部');
+  $('field-dept').classList.add('ok');
+  addLog('[SAP] 部門コード: 1000（製造部）を入力', '');
+  addLog('[WalkMe] Action Bar: 部門コード 1000 を検出 → ピル更新', 'log-wm');
+  setPills(
+    '<div class="ab-pill active-orange" onclick="demoNext()">⚠ 部門1000 の科目ルールを確認</div>' +
+    '<div class="ab-pill active-blue" onclick="demoNext()">✓ チェック</div>'
+  );
+}
+
+// Phase 2: 勘定科目入力（NG値）
+async function p2_acctInput() {
+  siDone('si-2'); siActive('si-3'); setProg(37);
+  await typeIn('field-acct', '600000 — 販売費');
+  addLog('[SAP] 勘定科目: 600000（販売費）を入力 ← この科目は製造部門では使えない', 'log-warn');
+  await typeIn('field-amount', '¥ 150,000');
+  await typeIn('field-text', '4月度 資材調達費用');
+  addLog('[WalkMe] Action Bar: 「✓ チェック」ボタンが有効', 'log-wm');
+}
+
+// Phase 3: チェック → NG判定
+async function p3_checkNG() {
+  siDone('si-3'); siActive('si-4'); setProg(50);
+  addLog('[Joule] カスタムスキル実行: 部門1000 × 科目600000 の組み合わせ判定...', 'log-jo');
+  await showLoad('Jouleカスタムスキル実行中...');
+
+  // NG結果
+  addLog('[Joule] 判定結果: ❌ NG — 製造部門に販売費（600000）は使用不可', 'log-err');
+  addLog('[Joule] 利用可能科目一覧を取得（CDS View → OData: 5件）', 'log-jo');
+  addLog('[WalkMe] Launcher: 表示継続（validation_status: pending）', 'log-wm');
+
+  $('field-acct').classList.add('error');
+
+  // Action Bar更新
+  setPills(
+    '<div class="ab-pill active-red">❌ この科目は使用できません</div>' +
+    '<div class="ab-pill" style="color:#888;">再チェックしてください</div>'
+  );
+
+  // Jouleカード表示（NG）
+  $('wm-card-title').textContent = 'Joule — 検証結果';
+  $('wm-card-body').innerHTML = `
+    <div class="wm-card-detail" style="background:#FEF2F2;border:1px solid #FECACA;">
+      <strong style="color:#DC2626;">❌ 部門1000（製造部）では<br>勘定科目 600000（販売費）は使用できません。</strong>
+    </div>
+    <div style="font-size:12px;font-weight:600;color:#0F172A;margin-bottom:6px;">部門1000 で利用可能な勘定科目：</div>
+    <div class="acct-list">
+      <div class="acct-item recommended">
+        <span class="acct-code">500000</span>
+        <span class="acct-name">製造材料費 ⭐ 推奨</span>
+      </div>
+      <div class="acct-item">
+        <span class="acct-code">510000</span>
+        <span class="acct-name">製造労務費</span>
+      </div>
+      <div class="acct-item">
+        <span class="acct-code">520000</span>
+        <span class="acct-name">製造経費</span>
+      </div>
+      <div class="acct-item">
+        <span class="acct-code">530000</span>
+        <span class="acct-name">外注加工費</span>
+      </div>
+      <div class="acct-item">
+        <span class="acct-code">540000</span>
+        <span class="acct-name">減価償却費（製造）</span>
+      </div>
+    </div>
+    <div class="ref-info">
+      参照時刻: ${new Date().toLocaleString('ja-JP')} ｜ 参照元: S/4HANA CDS View (OData)
+    </div>
+  `;
+  $('wm-card-footer').innerHTML = '<div class="wm-refresh-btn">↻</div>';
+  showCard();
+}
+
+// Phase 4: 科目修正
+async function p4_correct() {
+  siDone('si-4'); siActive('si-5'); setProg(62);
+  closeCard();
+  addLog('[ユーザー] Jouleカードの一覧を見て科目を修正', '');
+
+  await sleep(400);
+  $('field-acct').classList.remove('error');
+  await typeIn('field-acct', '500000 — 製造材料費');
+  $('field-acct').classList.remove('filled');
+
+  addLog('[WalkMe] OnScreen Rules: 勘定科目の値変化を検知（600000 → 500000）', 'log-wm');
+  addLog('[WalkMe] Variable: validation_status → "pending"（リセット）', 'log-wm');
+  $('validation-badge').textContent = '⏳ 未検証';
+  $('validation-badge').style.background = '#FEF3C7';
+  $('validation-badge').style.color = '#92400E';
+  $('validation-badge').style.borderColor = '#FDE68A';
+
+  setPills(
+    '<div class="ab-pill active-orange">⚠ 科目が変更されました — 再チェック</div>' +
+    '<div class="ab-pill active-blue" onclick="demoNext()">✓ チェック</div>'
+  );
+}
+
+// Phase 5: 再チェック → OK
+async function p5_recheckOK() {
+  siDone('si-5'); siActive('si-6'); setProg(75);
+  addLog('[Joule] カスタムスキル再実行: 部門1000 × 科目500000 の組み合わせ判定...', 'log-jo');
+  await showLoad('Jouleカスタムスキル実行中...');
+
+  // OK結果
+  addLog('[Joule] 判定結果: ✅ OK — 部門1000 × 科目500000 は有効な組み合わせ', 'log-ok');
+  addLog('[WalkMe] Action Bar: 「確認完了」ボタンを表示（パターンA）', 'log-wm');
+
+  $('field-acct').classList.add('ok');
+  $('validation-badge').textContent = '✅ 検証済み';
+  $('validation-badge').style.background = '#DCFCE7';
+  $('validation-badge').style.color = '#166534';
+  $('validation-badge').style.borderColor = '#BBF7D0';
+
+  setPills(
+    '<div class="ab-pill active-green">✅ この組み合わせは有効です</div>' +
+    '<div class="ab-pill active-blue" onclick="demoNext()">✓ 確認完了</div>'
+  );
+
+  // Jouleカード（OK）
+  $('wm-card-title').textContent = 'Joule — 検証結果';
+  $('wm-card-body').innerHTML = `
+    <div class="wm-card-detail" style="background:#F0FDF4;border:1px solid #BBF7D0;">
+      <strong style="color:#16A34A;">✅ 部門1000（製造部）×<br>勘定科目 500000（製造材料費）は<br>有効な組み合わせです。</strong>
+    </div>
+    <div class="ref-info">
+      参照時刻: ${new Date().toLocaleString('ja-JP')} ｜ 参照元: S/4HANA CDS View (OData)
+    </div>
+  `;
+  $('wm-card-footer').innerHTML = `
+    <button class="wm-copy-btn green" onclick="demoNext()">✓ 確認完了</button>
+    <div class="wm-refresh-btn">↻</div>
+  `;
+  showCard();
+}
+
+// Phase 6: ゲート解除（パターンA — setVariable）
+async function p6_gateOpen() {
+  siDone('si-6'); siActive('si-7'); setProg(88);
+  closeCard();
+
+  addLog('[WalkMe] WalkMeAPI.setVariable("validation_status", "OK") 実行 ★パターンA', 'log-wm');
+  await sleep(500);
+
+  // Launcher消滅アニメーション
+  $('wm-launcher').classList.add('hidden');
+  addLog('[WalkMe] Launcher: 非表示（ゲート解除）', 'log-ok');
+  addLog('[SAP] 保存ボタン: クリック可能', 'log-ok');
+
+  await sleep(300);
+  $('btn-save').disabled = false;
+
+  setPills(
+    '<div class="ab-pill active-green">✅ 検証済み — 保存できます</div>'
+  );
+}
+
+// Phase 7: 保存
+async function p7_save() {
+  siDone('si-7'); setProg(100);
+  addLog('[SAP] 伝票 1400000123 を保存しました', 'log-ok');
+
+  $('btn-save').disabled = true;
+  $('btn-save').textContent = '保存済み';
+  $('save-success').style.display = 'block';
+
+  setPills(
+    '<div class="ab-pill active-green">✅ 伝票保存完了</div>' +
+    '<div class="ab-pill" style="color:#888;">伝票番号: 1400000123</div>'
+  );
+
+  $('demo-next-btn').disabled = true;
+  $('demo-next-btn').textContent = '✓ デモ完了';
+  $('demo-next-btn').style.opacity = '0.5';
+}
+
+// リセット
+function demoReset() {
+  phase = 0;
+  // ステップインジケーター
+  for (let i = 0; i <= 7; i++) {
+    const si = $('si-' + i);
+    if (si) { si.classList.remove('active', 'done'); }
+  }
+  $('si-0').classList.add('active');
+  setProg(3);
+
+  // フィールド
+  ['field-dept', 'field-acct', 'field-amount', 'field-text'].forEach(id => {
+    const el = $(id);
+    if (el) { el.textContent = '—'; el.classList.remove('filled', 'error', 'ok'); }
+  });
+
+  // Launcher
+  $('wm-launcher').classList.remove('hidden');
+  $('btn-save').disabled = true;
+  $('btn-save').textContent = '保存';
+  $('save-success').style.display = 'none';
+
+  // Validation badge
+  $('validation-badge').style.display = 'none';
+
+  // Action Bar
+  $('ab').classList.remove('show');
+  setPills('<div class="ab-pill active-blue" onclick="demoNext()">✨ 部門・科目の組み合わせをチェックできます</div>');
+
+  // Card
+  closeCard();
+
+  // Log
+  $('log').innerHTML = '';
+
+  // Button
+  $('demo-next-btn').disabled = false;
+  $('demo-next-btn').textContent = '▶ 次のステップへ';
+  $('demo-next-btn').style.opacity = '1';
+}
+
+// ── ナビゲーション スクロール監視 ──
+window.addEventListener('scroll', () => {
+  const sections = ['hero', 'scenario', 'demo', 'concerns'];
+  const labels = ['概要', 'シナリオ', 'デモ', '懸念'];
+  let current = 0;
+  sections.forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (el && window.scrollY >= el.offsetTop - 120) current = i;
+  });
+  document.querySelectorAll('.nav-item').forEach((n, i) => {
+    n.classList.toggle('active', i === current);
+  });
+});
+</script>
+</body>
+</html>
